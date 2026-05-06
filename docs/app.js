@@ -142,41 +142,64 @@ function flashButton(btn, text, ms = 1500) {
   }, ms);
 }
 
-function saveConfig() {
+function isConfigLoaded() {
   const c = readConfig();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
-  info('已保存配置到浏览器 localStorage');
-  flashButton($('btn-save-config'), '✓ 已保存');
+  // 至少 3 个核心 URL 全有才算"已加载"
+  return Boolean(c.authUrl && c.summaryUrl && c.uploadUrl);
+}
+
+function refreshConfigStatus() {
+  const badge = $('config-status');
+  if (!badge) return;
+  if (isConfigLoaded()) {
+    badge.textContent = '✓ 已加载';
+    badge.classList.remove('status-empty');
+    badge.classList.add('status-loaded');
+  } else {
+    badge.textContent = '🔒 待导入密钥';
+    badge.classList.remove('status-loaded');
+    badge.classList.add('status-empty');
+  }
+}
+
+function persistConfigToLocalStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(readConfig()));
 }
 
 function loadConfig({ silent = false } = {}) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     applyConfig(DEFAULT_CONFIG);
-    if (!silent) info('未找到浏览器配置，已应用默认值（空）');
+    if (!silent) info('未找到浏览器配置，请导入 JSON 密钥');
+    refreshConfigStatus();
     return false;
   }
   try {
     applyConfig({ ...DEFAULT_CONFIG, ...JSON.parse(raw) });
-    if (!silent) info('已从浏览器 localStorage 加载配置');
-    flashButton($('btn-load-config'), '✓ 已加载');
+    if (!silent) info('已从浏览器 localStorage 自动恢复配置');
+    refreshConfigStatus();
     return true;
   } catch (e) {
     errr('localStorage 配置解析失败：', e.message);
     applyConfig(DEFAULT_CONFIG);
+    refreshConfigStatus();
     return false;
   }
 }
 
 function clearConfig() {
-  if (!confirm('确认清除浏览器中保存的配置？（不会影响已经导出的 JSON 文件）')) return;
+  if (!confirm('确认清除浏览器中保存的配置？清除后需要重新导入 JSON 密钥才能继续使用。')) return;
   localStorage.removeItem(STORAGE_KEY);
   applyConfig(DEFAULT_CONFIG);
   info('已清除浏览器配置');
   flashButton($('btn-clear-config'), '✓ 已清除');
+  refreshConfigStatus();
 }
 
 function exportConfigJSON() {
+  if (!isConfigLoaded()) {
+    if (!confirm('当前没有有效配置，仍要导出空模板吗？')) return;
+  }
   const c = readConfig();
   const json = JSON.stringify(c, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -208,9 +231,10 @@ async function handleImportFile(ev) {
     }
     applyConfig({ ...DEFAULT_CONFIG, ...obj });
     // 同时写入 localStorage，方便下次自动加载
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(readConfig()));
+    persistConfigToLocalStorage();
     info(`已从 ${file.name} 导入配置（已同步写入浏览器 localStorage）`);
     flashButton($('btn-import-config'), '✓ 已导入');
+    refreshConfigStatus();
   } catch (e) {
     errr(`导入失败：${e.message}`);
     alert(`导入失败：${e.message}`);
@@ -611,11 +635,9 @@ function handleStopUpload() {
 document.addEventListener('DOMContentLoaded', () => {
   loadConfig({ silent: true });
 
-  $('btn-save-config').addEventListener('click', saveConfig);
-  $('btn-load-config').addEventListener('click', () => loadConfig());
-  $('btn-export-config').addEventListener('click', exportConfigJSON);
   $('btn-import-config').addEventListener('click', triggerImport);
   $('cfg-file-input').addEventListener('change', handleImportFile);
+  $('btn-export-config').addEventListener('click', exportConfigJSON);
   $('btn-clear-config').addEventListener('click', clearConfig);
 
   $('btn-build-auth').addEventListener('click', handleBuildAuth);

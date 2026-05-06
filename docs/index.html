@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>红蜻蜓接口实验台 · 教学用</title>
+  <title>hongqingting</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="page-header">
-    <h1>红蜻蜓接口实验台</h1>
+    <h1>hongqingting</h1>
     <p class="warn">
       ⚠️ 仅用于在自建/授权服务器上做 HTTP 请求构造、压缩、签名等教学演示。
       所有目标地址需自行填写。请不要把它指向不属于你的生产系统。
@@ -18,41 +18,38 @@
   <main>
     <!-- ============ 1. 服务器配置 ============ -->
     <section id="config-section">
-      <h2>① 服务器配置</h2>
+      <h2>① 服务器配置 <span id="config-status" class="status-badge status-empty">🔒 待导入密钥</span></h2>
       <p class="hint">
-        两种保存方式可选：
-        <strong>① 保存到浏览器</strong> — 写入当前浏览器 localStorage，下次打开同一浏览器自动加载；
-        <strong>② 导出为 JSON 文件</strong> — 下载到本地，方便备份 / 多设备迁移 / 发给学生当模板。
-        配置不会发送到任何外部站点。
+        本区域字段 <strong>不允许手动输入</strong>，只能通过 <em>从 JSON 文件导入</em> 填入。
+        请向管理员/老师索取配置文件（<code>.json</code>），点击下方导入按钮加载。
+        导入后会自动写入浏览器 localStorage，下次打开同一浏览器会自动恢复。
       </p>
       <div class="grid">
         <label>登录接口 URL
-          <input id="cfg-auth-url" type="text" placeholder="https://your-server.example.com/cloud/DflyServer" />
+          <input id="cfg-auth-url" type="text" placeholder="（等待导入）" readonly />
         </label>
         <label>查询里程接口 URL
-          <input id="cfg-summary-url" type="text" placeholder="https://your-server.example.com/Api/webserver/getRunDataSummary" />
+          <input id="cfg-summary-url" type="text" placeholder="（等待导入）" readonly />
         </label>
         <label>上传跑步数据接口 URL
-          <input id="cfg-upload-url" type="text" placeholder="https://your-server.example.com/Api/webserver/uploadRunData" />
+          <input id="cfg-upload-url" type="text" placeholder="（等待导入）" readonly />
         </label>
         <label>学校代码 (schoolno)
-          <input id="cfg-school-no" type="text" placeholder="例如 99999" />
+          <input id="cfg-school-no" type="text" placeholder="（等待导入）" readonly />
         </label>
         <label>密码盐前缀
-          <input id="cfg-pwd-prefix" type="text" value="Stu" />
+          <input id="cfg-pwd-prefix" type="text" placeholder="（等待导入）" readonly />
         </label>
         <label>查询接口固定 UID
-          <input id="cfg-query-uid" type="text" placeholder="可选；留空则用当前选中的上传 UID" />
+          <input id="cfg-query-uid" type="text" placeholder="（等待导入）" readonly />
         </label>
         <label class="full">设备 UID 列表（一行一个）
-          <textarea id="cfg-uid-list" rows="5" placeholder="device-uid-1&#10;device-uid-2&#10;device-uid-3"></textarea>
+          <textarea id="cfg-uid-list" rows="5" placeholder="（等待导入）" readonly></textarea>
         </label>
       </div>
       <div class="actions">
-        <button id="btn-save-config">保存到浏览器</button>
-        <button id="btn-load-config" class="secondary">从浏览器加载</button>
-        <button id="btn-export-config" class="secondary">导出为 JSON 文件</button>
-        <button id="btn-import-config" class="secondary">从 JSON 文件导入</button>
+        <button id="btn-import-config">从 JSON 文件导入</button>
+        <button id="btn-export-config" class="secondary">导出当前配置为 JSON</button>
         <button id="btn-clear-config" class="danger">清除浏览器配置</button>
         <input id="cfg-file-input" type="file" accept="application/json,.json" hidden />
       </div>
