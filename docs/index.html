@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>红蜻蜓接口实验台 · 教学用</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>红蜻蜓接口实验台</h1>
+    <p class="warn">
+      ⚠️ 仅用于在自建/授权服务器上做 HTTP 请求构造、压缩、签名等教学演示。
+      所有目标地址需自行填写。请不要把它指向不属于你的生产系统。
+    </p>
+  </header>
+
+  <main>
+    <!-- ============ 1. 服务器配置 ============ -->
+    <section id="config-section">
+      <h2>① 服务器配置</h2>
+      <p class="hint">所有接口地址、学校代码、密码盐都是配置项。保存后写入浏览器 localStorage，不会发送到任何外部站点。</p>
+      <div class="grid">
+        <label>登录接口 URL
+          <input id="cfg-auth-url" type="text" placeholder="https://your-server.example.com/cloud/DflyServer" />
+        </label>
+        <label>查询里程接口 URL
+          <input id="cfg-summary-url" type="text" placeholder="https://your-server.example.com/Api/webserver/getRunDataSummary" />
+        </label>
+        <label>上传跑步数据接口 URL
+          <input id="cfg-upload-url" type="text" placeholder="https://your-server.example.com/Api/webserver/uploadRunData" />
+        </label>
+        <label>学校代码 (schoolno)
+          <input id="cfg-school-no" type="text" placeholder="例如 99999" />
+        </label>
+        <label>密码盐前缀
+          <input id="cfg-pwd-prefix" type="text" value="Stu" />
+        </label>
+        <label>查询接口固定 UID
+          <input id="cfg-query-uid" type="text" placeholder="可选；留空则用当前选中的上传 UID" />
+        </label>
+        <label class="full">设备 UID 列表（一行一个）
+          <textarea id="cfg-uid-list" rows="5" placeholder="device-uid-1&#10;device-uid-2&#10;device-uid-3"></textarea>
+        </label>
+      </div>
+      <div class="actions">
+        <button id="btn-save-config">保存到本地</button>
+        <button id="btn-load-config" class="secondary">从本地加载</button>
+        <button id="btn-clear-config" class="danger">清除本地配置</button>
+      </div>
+    </section>
+
+    <!-- ============ 2. 登录验证 ============ -->
+    <section id="auth-section">
+      <h2>② 登录验证</h2>
+      <p class="hint">演示密码盐 + MD5 + URL 编码列表 的请求构造。</p>
+      <div class="grid">
+        <label>学号
+          <input id="stu-no" type="text" placeholder="例如 20221303205" />
+        </label>
+      </div>
+      <div class="actions">
+        <button id="btn-build-auth" class="secondary">构造请求（不发送）</button>
+        <button id="btn-send-auth">构造并发送</button>
+      </div>
+      <details open>
+        <summary>请求预览</summary>
+        <pre id="preview-auth" class="preview"></pre>
+      </details>
+    </section>
+
+    <!-- ============ 3. 查询里程 ============ -->
+    <section id="query-section">
+      <h2>③ 查询当前里程</h2>
+      <p class="hint">演示用 gzip 压缩 body 后再 POST 的流程。</p>
+      <div class="actions">
+        <button id="btn-build-query" class="secondary">构造请求（不发送）</button>
+        <button id="btn-send-query">构造并发送</button>
+      </div>
+      <details open>
+        <summary>请求预览</summary>
+        <pre id="preview-query" class="preview"></pre>
+      </details>
+    </section>
+
+    <!-- ============ 4. 上传跑步数据 ============ -->
+    <section id="upload-section">
+      <h2>④ 生成并上传跑步数据</h2>
+      <p class="hint">演示：根据预设距离 / 时长生成 begintime · endtime · usetime · distance · speed，再读取轨迹文件改写每个轨迹点的时间戳，最后把 payload gzip 压缩 POST 出去。</p>
+      <div class="grid">
+        <label>距离预设
+          <select id="up-preset">
+            <option value="1.6km">1.6 km（约 320 秒）</option>
+            <option value="1.16km">1.16 km（约 320–1220 秒）</option>
+            <option value="12km">12 km（约 5800 秒）</option>
+            <option value="1km">1 km（自定义示例）</option>
+          </select>
+        </label>
+        <label>日期偏移 day（向前推几天，可为小数）
+          <input id="up-day" type="number" step="0.1" value="0" />
+        </label>
+        <label>UID 索引（上方 UID 列表的第几行，0 起）
+          <input id="up-uid-idx" type="number" min="0" value="0" />
+        </label>
+        <label>循环次数（连续生成多少天）
+          <input id="up-count" type="number" min="1" value="1" />
+        </label>
+        <label>每次循环 day 步进
+          <input id="up-step" type="number" step="0.1" value="1" />
+        </label>
+      </div>
+      <div class="actions">
+        <button id="btn-build-upload" class="secondary">生成预览（不发送）</button>
+        <button id="btn-send-upload">生成并发送</button>
+        <button id="btn-stop-upload" class="danger" disabled>停止</button>
+      </div>
+      <details open>
+        <summary>请求预览（gzip 之前的明文 + 计算参数）</summary>
+        <pre id="preview-upload" class="preview"></pre>
+      </details>
+    </section>
+
+    <!-- ============ 5. 日志 ============ -->
+    <section id="log-section">
+      <h2>⑤ 实时日志</h2>
+      <div class="actions">
+        <button id="btn-clear-log" class="secondary">清空日志</button>
+      </div>
+      <pre id="log" class="preview"></pre>
+    </section>
+
+    <footer class="page-footer">
+      <details>
+        <summary>说明 / FAQ</summary>
+        <ul>
+          <li><strong>HTTPS 混合内容：</strong>GitHub Pages 是 HTTPS，浏览器会拒绝从 HTTPS 页面发到 HTTP 后端的请求。把后端做成 HTTPS（自签 + 证书安装，或用 Cloudflare Tunnel/Caddy 自动 HTTPS），或本地运行该页面（<code>python -m http.server</code>）。</li>
+          <li><strong>CORS：</strong>后端要返回 <code>Access-Control-Allow-Origin: https://&lt;your&gt;.github.io</code>（或 <code>*</code>），处理 OPTIONS 预检，并允许 <code>Content-Type</code> 头。</li>
+          <li><strong>User-Agent：</strong>浏览器禁止 JS 修改 UA。原 Python 脚本里设置的 <code>okhttp/...</code> / <code>Dalvik/...</code> 在浏览器里都不会生效——发出去的就是浏览器自己的 UA。如果你的服务器要根据 UA 鉴别，需要放宽规则或改在后端测。</li>
+          <li><strong>Content-Encoding: gzip：</strong>当前脚本和原 Python 一样，body 是 gzip 字节，但不显式声明 <code>Content-Encoding</code>，由服务器按惯例自行判断。</li>
+        </ul>
+      </details>
+    </footer>
+  </main>
+
+  <!-- 第三方 MD5：blueimp-md5（MIT），CDN 引入 -->
+  <script src="https://cdn.jsdelivr.net/npm/blueimp-md5@2.19.0/js/md5.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
