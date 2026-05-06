@@ -3,127 +3,367 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>hongqingting</title>
+  <title>hongqingting · 教学</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
 </head>
 <body>
   <header class="page-header">
     <h1>hongqingting</h1>
-    <p class="warn">
-      ⚠️ 仅用于在自建/授权服务器上做 HTTP 请求构造、压缩、签名等教学演示。
-      所有目标地址需自行填写。请不要把它指向不属于你的生产系统。
-    </p>
+    <p class="subtitle">网络安全教学案例 · HTTP 请求剖析 · 浏览器安全策略 · 服务端反作弊</p>
   </header>
 
-  <main>
-    <!-- ============ 1. 服务器配置 ============ -->
-    <section id="config-section">
-      <h2>① 服务器配置 <span id="config-status" class="status-badge status-empty">🔒 待导入密钥</span></h2>
-      <p class="hint">
-        所有目标地址、学校代码、UID 等配置项 <strong>不在页面上展示</strong>，
-        只能通过 <em>从 JSON 文件导入</em> 加载到内存（同时持久化到浏览器 localStorage，
-        下次打开同一浏览器会自动恢复）。请向管理员/老师索取 <code>.json</code> 配置文件。
-      </p>
-      <div class="actions">
-        <button id="btn-import-config">从 JSON 文件导入</button>
-        <input id="cfg-file-input" type="file" accept="application/json,.json" hidden />
-      </div>
-    </section>
+  <div class="layout">
+    <nav class="toc" aria-label="目录">
+      <p class="toc-title">目录</p>
+      <ol>
+        <li><a href="#about">一、项目说明</a></li>
+        <li><a href="#why-local">二、为什么必须本地运行</a></li>
+        <li><a href="#setup">三、本地环境准备</a></li>
+        <li><a href="#mock">四、自建 Mock 服务器</a></li>
+        <li><a href="#req-anatomy">五、请求结构剖析</a>
+          <ol>
+            <li><a href="#req-auth">5.1 登录请求</a></li>
+            <li><a href="#req-query">5.2 查询里程</a></li>
+            <li><a href="#req-upload">5.3 上传跑步数据</a></li>
+          </ol>
+        </li>
+        <li><a href="#trajectory">六、轨迹文件格式</a></li>
+        <li><a href="#defense">七、服务端反作弊视角</a></li>
+        <li><a href="#exercises">八、思考与练习题</a></li>
+      </ol>
+    </nav>
 
-    <!-- ============ 2. 登录验证 ============ -->
-    <section id="auth-section">
-      <h2>② 登录验证</h2>
-      <p class="hint">演示密码盐 + MD5 + URL 编码列表 的请求构造。</p>
-      <div class="grid">
-        <label>学号
-          <input id="stu-no" type="text" placeholder="例如 20221303205" />
-        </label>
-      </div>
-      <div class="actions">
-        <button id="btn-build-auth" class="secondary">构造请求（不发送）</button>
-        <button id="btn-send-auth">构造并发送</button>
-      </div>
-      <details open>
-        <summary>请求预览</summary>
-        <pre id="preview-auth" class="preview"></pre>
-      </details>
-    </section>
-
-    <!-- ============ 3. 查询里程 ============ -->
-    <section id="query-section">
-      <h2>③ 查询当前里程</h2>
-      <p class="hint">演示用 gzip 压缩 body 后再 POST 的流程。</p>
-      <div class="actions">
-        <button id="btn-build-query" class="secondary">构造请求（不发送）</button>
-        <button id="btn-send-query">构造并发送</button>
-      </div>
-      <details open>
-        <summary>请求预览</summary>
-        <pre id="preview-query" class="preview"></pre>
-      </details>
-    </section>
-
-    <!-- ============ 4. 上传跑步数据 ============ -->
-    <section id="upload-section">
-      <h2>④ 生成并上传跑步数据</h2>
-      <p class="hint">演示：根据预设距离 / 时长生成 begintime · endtime · usetime · distance · speed，再读取轨迹文件改写每个轨迹点的时间戳，最后把 payload gzip 压缩 POST 出去。</p>
-      <div class="grid">
-        <label>距离预设
-          <select id="up-preset">
-            <option value="1.6km">1.6 km（约 320 秒）</option>
-            <option value="1.16km">1.16 km（约 320–1220 秒）</option>
-            <option value="12km">12 km（约 5800 秒）</option>
-            <option value="1km">1 km（自定义示例）</option>
-          </select>
-        </label>
-        <label>日期偏移 day（向前推几天，可为小数）
-          <input id="up-day" type="number" step="0.1" value="0" />
-        </label>
-        <label>UID 索引（上方 UID 列表的第几行，0 起）
-          <input id="up-uid-idx" type="number" min="0" value="0" />
-        </label>
-        <label>循环次数（连续生成多少天）
-          <input id="up-count" type="number" min="1" value="1" />
-        </label>
-        <label>每次循环 day 步进
-          <input id="up-step" type="number" step="0.1" value="1" />
-        </label>
-      </div>
-      <div class="actions">
-        <button id="btn-build-upload" class="secondary">生成预览（不发送）</button>
-        <button id="btn-send-upload">生成并发送</button>
-        <button id="btn-stop-upload" class="danger" disabled>停止</button>
-      </div>
-      <details open>
-        <summary>请求预览（gzip 之前的明文 + 计算参数）</summary>
-        <pre id="preview-upload" class="preview"></pre>
-      </details>
-    </section>
-
-    <!-- ============ 5. 日志 ============ -->
-    <section id="log-section">
-      <h2>⑤ 实时日志</h2>
-      <div class="actions">
-        <button id="btn-clear-log" class="secondary">清空日志</button>
-      </div>
-      <pre id="log" class="preview"></pre>
-    </section>
-
-    <footer class="page-footer">
-      <details>
-        <summary>说明 / FAQ</summary>
+    <main>
+      <!-- ============ 一、项目说明 ============ -->
+      <section id="about">
+        <h2>一、项目说明</h2>
+        <p>本项目以 <code>hongqingting.py</code> 为案例，演示一类典型的"客户端伪造数据上报"脚本是如何工作的，并以此为切入点讲解：</p>
         <ul>
-          <li><strong>HTTPS 混合内容：</strong>GitHub Pages 是 HTTPS，浏览器会拒绝从 HTTPS 页面发到 HTTP 后端的请求。把后端做成 HTTPS（自签 + 证书安装，或用 Cloudflare Tunnel/Caddy 自动 HTTPS），或本地运行该页面（<code>python -m http.server</code>）。</li>
-          <li><strong>CORS：</strong>后端要返回 <code>Access-Control-Allow-Origin: https://&lt;your&gt;.github.io</code>（或 <code>*</code>），处理 OPTIONS 预检，并允许 <code>Content-Type</code> 头。</li>
-          <li><strong>User-Agent：</strong>浏览器禁止 JS 修改 UA。原 Python 脚本里设置的 <code>okhttp/...</code> / <code>Dalvik/...</code> 在浏览器里都不会生效——发出去的就是浏览器自己的 UA。如果你的服务器要根据 UA 鉴别，需要放宽规则或改在后端测。</li>
-          <li><strong>Content-Encoding: gzip：</strong>当前脚本和原 Python 一样，body 是 gzip 字节，但不显式声明 <code>Content-Encoding</code>，由服务器按惯例自行判断。</li>
+          <li>HTTP 请求构造（form-urlencoded、Python-dict 风格 body、URL 编码）</li>
+          <li>密码盐 (salt) + MD5 散列鉴权</li>
+          <li>gzip 压缩传输</li>
+          <li>浏览器同源策略 / Mixed Content / CORS 的拦截原理</li>
+          <li>服务端如何对客户端伪造的数据做识别与防御</li>
         </ul>
-      </details>
-    </footer>
-  </main>
+        <div class="callout callout-warn">
+          <strong>使用须知。</strong>
+          脚本会向远端 HTTP 服务器发送真实请求。请只把目标地址指向 <strong>你自己授权、自己控制的服务器</strong>（例如本文第四节的 mock）。
+          在没有授权的情况下用脚本对接生产系统提交数据，属于伪造提交，违反学术诚信和大多数地方法律法规，本课程材料明确不为此提供帮助。
+        </div>
+      </section>
 
-  <!-- 第三方 MD5：blueimp-md5（MIT），CDN 引入 -->
-  <script src="https://cdn.jsdelivr.net/npm/blueimp-md5@2.19.0/js/md5.min.js"></script>
-  <script src="app.js"></script>
+      <!-- ============ 二、为什么必须本地运行 ============ -->
+      <section id="why-local">
+        <h2>二、为什么必须本地运行（这一页不能直接跑）</h2>
+        <p>很多同学第一反应是："为什么不把脚本搬到 GitHub Pages 上点一下就跑？"答案藏在两道浏览器安全墙里——而它们正是今天要讲的第一个知识点。</p>
+
+        <h3>2.1 Mixed Content（混合内容）</h3>
+        <p>本页托管在 <code>https://&lt;org&gt;.github.io/...</code>。GitHub Pages <strong>强制 HTTPS</strong>。脚本里的目标地址却是 <code>http://...</code>。</p>
+        <p>现代浏览器规则：</p>
+        <blockquote>从 HTTPS 页面发出的、指向 HTTP 资源的请求，一律拦截。</blockquote>
+        <p>请求根本不会出网卡。Console 里你能看到的报错长这样：</p>
+        <pre><code class="language-text">Mixed Content: The page at 'https://...' was loaded over HTTPS,
+but requested an insecure resource 'http://...'.
+This request has been blocked; the content must be served over HTTPS.</code></pre>
+
+        <h3>2.2 CORS（跨源资源共享）</h3>
+        <p>就算混合内容这关过了（比如把页面也用 HTTP 起本地 server），还有第二道墙：浏览器的同源策略要求跨源请求需要服务器返回 <code>Access-Control-Allow-Origin</code> 头。脚本指向的服务器并不会下发这个头，所以浏览器即便收到了响应也会丢掉，并向 JS 抛出：</p>
+        <pre><code class="language-text">Access to fetch at 'http://...' from origin 'http://localhost:8000'
+has been blocked by CORS policy: No 'Access-Control-Allow-Origin'
+header is present on the requested resource.</code></pre>
+
+        <h3>2.3 为什么 Python <code>requests</code> 没事</h3>
+        <p>Mixed Content 和 CORS 都是 <strong>浏览器</strong>层面的安全机制，目的是防止恶意网站拿你的浏览器去打别人。<code>requests</code> 是普通 HTTP 客户端，不是浏览器，不受这两道墙约束——所以你看到 Python 脚本能跑、网页跑不通。这是设计如此，不是 bug。</p>
+
+        <table class="compare">
+          <thead>
+            <tr><th>能力</th><th>Python <code>requests</code></th><th>浏览器 <code>fetch</code></th></tr>
+          </thead>
+          <tbody>
+            <tr><td>HTTPS → HTTP 请求</td><td>允许</td><td>拦截 (Mixed Content)</td></tr>
+            <tr><td>跨源请求</td><td>允许</td><td>需服务端 CORS 头</td></tr>
+            <tr><td>修改 User-Agent</td><td>允许</td><td>禁止</td></tr>
+            <tr><td>修改 Origin / Referer</td><td>允许</td><td>禁止</td></tr>
+            <tr><td>读取任意 Cookie</td><td>允许</td><td>受 SameSite / HttpOnly 限制</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <strong>课程小结。</strong>
+          浏览器里写代码 ≠ 服务器/CLI 里写代码。前端能做什么受同源策略、Mixed Content、CSP 等多重约束。
+          要在浏览器里实现 <code>requests</code> 能做的事，就必须在自己控制的服务器上做一层代理——而这层代理本身又会成为下一节"反作弊"要重点防的东西。
+        </div>
+      </section>
+
+      <!-- ============ 三、本地环境准备 ============ -->
+      <section id="setup">
+        <h2>三、本地环境准备</h2>
+        <p>建议 Python 3.8+。先克隆仓库并进入目录：</p>
+        <pre><code class="language-bash">git clone https://github.com/XJU-OpenHub/hongqingting_runner.git
+cd hongqingting_runner</code></pre>
+        <p>建虚拟环境（macOS / Linux）：</p>
+        <pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt</code></pre>
+        <p>Windows PowerShell：</p>
+        <pre><code class="language-bash">python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt</code></pre>
+      </section>
+
+      <!-- ============ 四、Mock 服务器 ============ -->
+      <section id="mock">
+        <h2>四、自建 Mock 服务器（教学推荐用法）</h2>
+        <p>我们 <strong>强烈建议</strong> 在课堂演示中只把脚本指向一台你自己控制的本地 mock，原因有二：</p>
+        <ol>
+          <li>讲到反作弊时，需要看到 <em>请求 → 解码 → 服务端判定</em> 整条链路，这只有自己能控的 mock 才看得到。</li>
+          <li>避免触碰生产系统，确保教学合规。</li>
+        </ol>
+        <p>下面这份 <code>mock_server.py</code> 用 Flask 实现了三个端点，并对上传 body 做最简单的反作弊检测，作为下文第七节的演示靶子：</p>
+        <pre><code class="language-python">"""mock_server.py — 教学用红蜻蜓接口 mock。
+依赖: pip install flask flask-cors
+启动: python mock_server.py        # 默认监听 5000
+"""
+import gzip, json, time, ast, re
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)  # 教学环境放开所有来源；生产应只放白名单
+
+def maybe_gunzip(raw: bytes) -> str:
+    """body 可能是 gzip，按 magic bytes 自检."""
+    if len(raw) >= 2 and raw[0] == 0x1f and raw[1] == 0x8b:
+        return gzip.decompress(raw).decode('utf-8', errors='replace')
+    return raw.decode('utf-8', errors='replace')
+
+def parse_pyobj(body: str):
+    """脚本 body 是 Python-dict 字面量风格（单引号），用 ast.literal_eval."""
+    try:
+        return ast.literal_eval(body)
+    except Exception:
+        return None
+
+# ---- 反作弊检测函数（详见第七节） ----
+def detect_fraud(payload: dict):
+    issues = []
+    try:
+        usetime = float(payload['usetime'])
+        distance = float(payload['distance'])
+        # 配速合理性：人类极限约 2.8 min/km；步行约 12 min/km
+        speed = (usetime / 60) / (distance / 1000)
+        if speed &lt; 2.8 or speed &gt; 12:
+            issues.append(f'配速异常 {speed:.2f} 分钟/km')
+        # 时间区间
+        begin, end = int(payload['begintime']), int(payload['endtime'])
+        if end - begin != usetime + (end - begin - usetime):
+            pass  # （留作学生补全：检验 begin/end/usetime 一致性）
+        # 轨迹时间戳单调性
+        loc = payload.get('location', '')
+        ts = [int(p.split(';')[1]) for p in loc.split('@') if ';' in p]
+        if any(b &lt; a for a, b in zip(ts, ts[1:])):
+            issues.append('轨迹时间戳非单调递增')
+        # 轨迹点数 vs 时长（采样率合理性）
+        if ts and (ts[-1] - ts[0]) / max(len(ts) - 1, 1) &gt; 30:
+            issues.append('采样间隔过大（&gt; 30 秒/点），可疑')
+    except Exception as e:
+        issues.append(f'解析失败: {e}')
+    return issues
+
+@app.post('/cloud/DflyServer')
+def auth():
+    body = request.get_data(as_text=True)
+    print('[AUTH]', body[:200])
+    return jsonify({'status': 'ok', 'echo': body})
+
+@app.post('/DragonFlyServ/Api/webserver/getRunDataSummary')
+def summary():
+    body = maybe_gunzip(request.get_data())
+    print('[QUERY]', body[:200])
+    return jsonify({'m': 12345, 'lasttime': int(time.time()), 'echo': body})
+
+@app.post('/DragonFlyServ/Api/webserver/uploadRunData')
+@app.post('/DragonFlyServ//uploadRunData')  # 1.16km 变体路径
+def upload():
+    body = maybe_gunzip(request.get_data())
+    print('[UPLOAD]', body[:300])
+    payload = parse_pyobj(body)
+    issues = detect_fraud(payload) if payload else ['body 解析失败']
+    if issues:
+        print('  ⚠️ 反作弊命中:', issues)
+        return jsonify({'status': 'reject', 'issues': issues}), 200
+    return jsonify({'status': 'ok'})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)</code></pre>
+
+        <p>启动它：</p>
+        <pre><code class="language-bash">pip install flask flask-cors
+python mock_server.py</code></pre>
+
+        <p>然后改 <code>hongqingting.py</code> 里的目标 URL 指向 <code>http://127.0.0.1:5000/...</code>，再 <code>python hongqingting.py</code>。整个流程不碰任何生产服务器。</p>
+      </section>
+
+      <!-- ============ 五、请求结构剖析 ============ -->
+      <section id="req-anatomy">
+        <h2>五、请求结构剖析</h2>
+
+        <!-- 5.1 -->
+        <h3 id="req-auth">5.1 登录请求 — 密码盐 + MD5 + URL 编码列表</h3>
+        <pre><code class="language-python"># hongqingting.py 摘录
+password = 'Stu' + no                      # ① 密码盐 + 学号
+md5_password = hashlib.md5(password.encode()).hexdigest()  # ② MD5 散列
+data = ("name=%5B%27bangding%27%2C%2710755%27%2C%27student%27%2C%27"
+        + no + "%27%2C%27" + md5_password + "%27%5D")      # ③ 拼接</code></pre>
+        <p>解码后这串 <code>name=</code> 实际等价于：</p>
+        <pre><code class="language-text">name=['bangding','10755','student','&lt;学号&gt;','&lt;md5(Stu+学号)&gt;']</code></pre>
+        <p>其中 <code>%5B</code> 是 <code>[</code>，<code>%27</code> 是 <code>'</code>，<code>%2C</code> 是 <code>,</code>，<code>%5D</code> 是 <code>]</code>。整个数组被当成一个字符串放在 form-urlencoded 的 <code>name</code> 参数里——这是个不太常见的 API 设计，服务端实际会再做一次反 URL 编码 + 反序列化。</p>
+
+        <h4>知识点</h4>
+        <ul>
+          <li><strong>密码盐 (salt)</strong>：固定前缀 <code>Stu</code> 拼接学号后再 MD5。这种"固定盐 + 用户标识"的做法本质上 <em>不是真正的盐</em>——真正的盐应当随机、按账户存储。这种做法只是"轻微混淆"，被反编译看到一次就全网破解。</li>
+          <li><strong>MD5</strong>：已被证明不抗碰撞，2026 年的密码学课不会推荐它做任何安全用途；但在协议逆向时仍很常见，因为很多老 API 在用。</li>
+          <li><strong>URL 编码</strong>：把任意字节安全地塞进 <code>application/x-www-form-urlencoded</code>。要让学生熟练在脑里把 <code>%XX</code> 翻译回字符。</li>
+        </ul>
+
+        <!-- 5.2 -->
+        <h3 id="req-query">5.2 查询里程 — gzip + Python-dict 风格 body</h3>
+        <pre><code class="language-python">data = ("{'studentno':" + no
+        + ",'uid':'&lt;固定 UID&gt;'"
+        + ",'schoolno':'10755'}")
+gzip_data = gzip.compress(bytes(data, 'utf-8'))
+resp = requests.post(url, headers=headers, data=gzip_data)</code></pre>
+        <p>注意几点：</p>
+        <ul>
+          <li>body 是 <strong>Python 字典字面量字符串</strong>（单引号），不是标准 JSON。服务端需要 <code>ast.literal_eval</code> 或自定义解析（用 <code>json.loads</code> 会失败）。</li>
+          <li>整个 body 用 gzip 压了一遍，但请求头 <strong>没有显式声明 <code>Content-Encoding: gzip</code></strong>——靠服务端按 magic bytes <code>1f 8b</code> 自检。这种隐式压缩在野生 API 里相当多。</li>
+          <li><code>'studentno'</code> 的值 <strong>不带引号</strong>（看起来像数字），其它字段都带引号。这种"不一致的引号风格"也是 API 自家拼字符串、未走标准序列化的强信号。</li>
+        </ul>
+
+        <!-- 5.3 -->
+        <h3 id="req-upload">5.3 上传跑步数据 — 真正的"伪造载荷"长什么样</h3>
+        <pre><code class="language-python">data = ("{'begintime':'" + str(begintime)
+        + "','endtime':'" + str(endtime)
+        + "','uid':'" + uid + "'"
+        + ",'schoolno':'10755'"
+        + ",'distance':'" + f"{distance:.1f}" + "'"
+        + ",'speed':'" + str(speed) + "'"
+        + ",'studentno':'" + no + "'"
+        + ",'atttype':'3','eventno':'803'"
+        + ",'location':'" + loc_r + "'"          # ← 改写后的轨迹串
+        + ",'pointstatus':'1'"
+        + ",'usetime':'" + str(usetime) + "'"
+        + ",'path':'null'}")
+gzip_data = gzip.compress(bytes(data, 'utf-8'))</code></pre>
+
+        <p>关键字段语义：</p>
+        <table class="compare">
+          <thead><tr><th>字段</th><th>含义</th><th>反作弊检测点</th></tr></thead>
+          <tbody>
+            <tr><td><code>begintime</code> / <code>endtime</code></td><td>开始/结束 Unix 秒</td><td>是否跨午夜？是否在合法运动时段？</td></tr>
+            <tr><td><code>distance</code></td><td>米，1 位小数</td><td>与 <code>usetime</code> 算出的配速是否物理合理？</td></tr>
+            <tr><td><code>usetime</code></td><td>用时秒数</td><td>是否 ≈ <code>endtime - begintime</code>？</td></tr>
+            <tr><td><code>speed</code></td><td>分钟/km，浮点</td><td>是否 = <code>(usetime/60) / (distance/1000)</code>？字段间一致性</td></tr>
+            <tr><td><code>uid</code></td><td>设备指纹</td><td>同一设备短期是否重复提交？同一 UID 跨学号？</td></tr>
+            <tr><td><code>location</code></td><td>轨迹点串，见下节</td><td>时间戳单调？两点间距与时差是否合理？是否与历史轨迹高度相似？</td></tr>
+            <tr><td><code>atttype</code> / <code>eventno</code> / <code>pointstatus</code> / <code>path</code></td><td>固定常量</td><td>固定值意味着这些字段服务端可能根本没看，或保留给未来用</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ============ 六、轨迹文件 ============ -->
+      <section id="trajectory">
+        <h2>六、轨迹文件格式</h2>
+        <p>仓库里 <code>location_*km</code> 是预录好的真实轨迹（每一行就是一段路线，按 <code>@</code> 分隔每个采样点）。单个采样点格式：</p>
+        <pre><code class="language-text">&lt;lat,lng&gt;;&lt;timestamp&gt;;null;null;&lt;displacement&gt;;null@</code></pre>
+        <p>例如：</p>
+        <pre><code class="language-text">43.85163360905115,87.7355488539563;1683710085;null;null;0.0;null@</code></pre>
+
+        <p>脚本上传前做的事情很简单（关键算法）：</p>
+        <pre><code class="language-python">points = re.findall(r'.*?@', text)
+delta_time = usetime / len(points)            # 等分时长
+runtime = begintime
+for item in points:
+    loc = re.match(r'(.*?);', item).group(1)  # 取出 lat,lng
+    item = re.sub(r'.*?;.*?;null;null;',
+                  f'{loc};{int(runtime)};null;null;', item)
+    out += item
+    runtime += delta_time</code></pre>
+
+        <p>也就是 <strong>坐标不动、时间戳重写</strong>。这是这一类伪造工具最廉价、最常见、也最容易被识破的核心套路。</p>
+
+        <h3>为什么这种重写容易被识破</h3>
+        <ul>
+          <li><strong>采样间隔太均匀</strong>：真实跑步 GPS 采样间隔会受信号波动影响（隧道、楼宇间），而这里直接 <code>delta_time = usetime / N</code> 平均分配，每两个点之间的间隔几乎完全相等。</li>
+          <li><strong>坐标完全复用</strong>：同一个学生反复上传同一段轨迹，统计上就是几乎 1:1 的轨迹相似度。</li>
+          <li><strong>位移与时差脱钩</strong>：真实运动中两点位移和时差有强相关；这里两点位移来自老轨迹，时差来自新分配，二者在物理意义上不再匹配（你可以让学生算一下"瞬时配速分布"）。</li>
+        </ul>
+      </section>
+
+      <!-- ============ 七、反作弊视角 ============ -->
+      <section id="defense">
+        <h2>七、服务端反作弊视角</h2>
+        <p>切换视角：你是后端工程师，怎么识别上一节那种伪造？这里给一份从易到难的检测清单，可作为大作业题目。</p>
+
+        <table class="compare">
+          <thead><tr><th>层级</th><th>检测点</th><th>实现难度</th><th>能识别什么</th></tr></thead>
+          <tbody>
+            <tr><td>L1 自洽性</td><td><code>endtime - begintime</code> ≈ <code>usetime</code>；<code>speed</code> = (usetime/60)/(distance/1000)</td><td>★</td><td>字段间互相算不平的低级伪造</td></tr>
+            <tr><td>L1 物理可行</td><td>配速在 [2.8, 12] 分/km；距离 / 时长在合理范围</td><td>★</td><td>填错数量级的批量发包</td></tr>
+            <tr><td>L2 时间</td><td>begintime / endtime 落在校规允许的运动时段；不跨夜</td><td>★</td><td>定时脚本在凌晨刷里程</td></tr>
+            <tr><td>L2 轨迹自洽</td><td>轨迹时间戳单调；两点间距 / 时差 → 瞬时速度也要在物理合理范围</td><td>★★</td><td>"坐标不动、时间戳重写" 这一类</td></tr>
+            <tr><td>L3 设备</td><td>UID 在短期内是否给多个 studentno 用过；同一 studentno 是否短期换 UID</td><td>★★</td><td>共享脚本 / 设备指纹复用</td></tr>
+            <tr><td>L3 轨迹去重</td><td>把每条轨迹做 hash 或几何相似度比对，和历史比；命中阈值即拒</td><td>★★★</td><td>预录轨迹反复上传</td></tr>
+            <tr><td>L4 行为画像</td><td>同一账号每周配速/总里程的分布：方差骤降 / 中位数恒定 → 可疑</td><td>★★★</td><td>长期 + 隐蔽的批量伪造</td></tr>
+            <tr><td>L4 客户端绑定</td><td>App 内做轨迹签名（HMAC + 设备私钥），服务端校验签名而非裸数据</td><td>★★★★</td><td>从协议层禁掉脱机伪造（但攻防永无止境）</td></tr>
+          </tbody>
+        </table>
+
+        <p>第四节的 <code>mock_server.py</code> 实现了 L1 + L2 的一个简化版（<code>detect_fraud</code> 函数），可以作为起点让学生扩展到 L3 / L4。</p>
+
+        <div class="callout">
+          <strong>讨论。</strong>
+          为什么真实生产里很少看到 L4 的客户端签名？提示：会显著增加 App 开发复杂度、被动手反编译破解（参考 frida、JustTrustMe 等工具）、还要面对刷机用户。
+          安全从来不是"绝对防得住"，而是"把攻击成本抬到收益不划算"。
+        </div>
+      </section>
+
+      <!-- ============ 八、思考与练习题 ============ -->
+      <section id="exercises">
+        <h2>八、思考与练习题</h2>
+
+        <h3>基础</h3>
+        <ol>
+          <li>用 <code>mock_server.py</code> 跑一遍。在 Console 看到的 body 是什么样的？回答："<code>application/x-www-form-urlencoded</code> 的 body 后面接一段 gzip 字节"——这种混合头部和编码的请求，浏览器 <code>fetch</code> 写出来会有什么坑？（提示：<code>Content-Type</code> 头怎么写？<code>Content-Encoding</code> 要不要写？）</li>
+          <li>把 <code>'Stu' + no</code> 改成 <code>'NotStu' + no</code>，登录会失败吗？为什么？</li>
+          <li>把 <code>schoolno</code> 改成一个不存在的代码，服务端 mock 怎么响应？真实服务端会怎样？</li>
+        </ol>
+
+        <h3>进阶</h3>
+        <ol>
+          <li>扩写 <code>detect_fraud</code>：实现"轨迹去重"——记录每个学号近 30 天提交过的所有 location 串，新提交时计算与历史的几何相似度（Hausdorff 距离 / DTW / 简单 hash），高于阈值即拒。</li>
+          <li>在客户端给 <code>location</code> 增加 HMAC 签名，签名 key 由服务端在登录时返回（短期有效）。修改 mock 让它校验签名。讨论攻击者如何绕过（提示：内存抓 key、动态 hook）。</li>
+          <li>用 mitmproxy 抓真实运动 App 的请求，对比本案例中的 body 结构，列出至少三处差异。</li>
+        </ol>
+
+        <h3>开放</h3>
+        <ol>
+          <li>同样的伪造手法应用到打卡考勤、健康码、消费数据上有什么社会影响？设计一份"以防御为主"的安全课大作业题目，从协议层、应用层、行为分析层各给一道任务。</li>
+        </ol>
+      </section>
+    </main>
+  </div>
+
+  <footer class="page-footer">
+    <p>本页内容仅用于网络安全课程教学。
+      代码示例与协议剖析的目的是 <strong>培养识别与防御能力</strong>，而非教如何攻击生产系统。
+      在没有授权的情况下，请不要把案例中的脚本指向不属于你的服务器。</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"
+    data-autoloader-path="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/"></script>
 </body>
 </html>
