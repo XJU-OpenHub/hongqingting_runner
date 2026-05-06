@@ -20,33 +20,10 @@
     <section id="config-section">
       <h2>① 服务器配置 <span id="config-status" class="status-badge status-empty">🔒 待导入密钥</span></h2>
       <p class="hint">
-        本区域字段 <strong>不允许手动输入</strong>，只能通过 <em>从 JSON 文件导入</em> 填入。
-        请向管理员/老师索取配置文件（<code>.json</code>），点击下方导入按钮加载。
-        导入后会自动写入浏览器 localStorage，下次打开同一浏览器会自动恢复。
+        所有目标地址、学校代码、UID 等配置项 <strong>不在页面上展示</strong>，
+        只能通过 <em>从 JSON 文件导入</em> 加载到内存（同时持久化到浏览器 localStorage，
+        下次打开同一浏览器会自动恢复）。请向管理员/老师索取 <code>.json</code> 配置文件。
       </p>
-      <div class="grid">
-        <label>登录接口 URL
-          <input id="cfg-auth-url" type="text" placeholder="（等待导入）" readonly />
-        </label>
-        <label>查询里程接口 URL
-          <input id="cfg-summary-url" type="text" placeholder="（等待导入）" readonly />
-        </label>
-        <label>上传跑步数据接口 URL
-          <input id="cfg-upload-url" type="text" placeholder="（等待导入）" readonly />
-        </label>
-        <label>学校代码 (schoolno)
-          <input id="cfg-school-no" type="text" placeholder="（等待导入）" readonly />
-        </label>
-        <label>密码盐前缀
-          <input id="cfg-pwd-prefix" type="text" placeholder="（等待导入）" readonly />
-        </label>
-        <label>查询接口固定 UID
-          <input id="cfg-query-uid" type="text" placeholder="（等待导入）" readonly />
-        </label>
-        <label class="full">设备 UID 列表（一行一个）
-          <textarea id="cfg-uid-list" rows="5" placeholder="（等待导入）" readonly></textarea>
-        </label>
-      </div>
       <div class="actions">
         <button id="btn-import-config">从 JSON 文件导入</button>
         <button id="btn-export-config" class="secondary">导出当前配置为 JSON</button>

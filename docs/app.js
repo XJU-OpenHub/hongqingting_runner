@@ -104,26 +104,24 @@ const errr = (...a) => log('ERR ', ...a);
 
 /* ----------------------------- 配置 ----------------------------- */
 
+// 配置只在内存里，UI 不展示。导入/清除时同步到 localStorage 持久化。
+let currentConfig = { ...DEFAULT_CONFIG };
+
 function readConfig() {
-  return {
-    authUrl: $('cfg-auth-url').value.trim(),
-    summaryUrl: $('cfg-summary-url').value.trim(),
-    uploadUrl: $('cfg-upload-url').value.trim(),
-    schoolNo: $('cfg-school-no').value.trim(),
-    passwordPrefix: $('cfg-pwd-prefix').value,
-    queryUid: $('cfg-query-uid').value.trim(),
-    uidList: $('cfg-uid-list').value,
-  };
+  return { ...currentConfig };
 }
 
 function applyConfig(c) {
-  $('cfg-auth-url').value = c.authUrl || '';
-  $('cfg-summary-url').value = c.summaryUrl || '';
-  $('cfg-upload-url').value = c.uploadUrl || '';
-  $('cfg-school-no').value = c.schoolNo || '';
-  $('cfg-pwd-prefix').value = c.passwordPrefix || 'Stu';
-  $('cfg-query-uid').value = c.queryUid || '';
-  $('cfg-uid-list').value = c.uidList || '';
+  const src = c || {};
+  currentConfig = {
+    authUrl: (src.authUrl || '').trim(),
+    summaryUrl: (src.summaryUrl || '').trim(),
+    uploadUrl: (src.uploadUrl || '').trim(),
+    schoolNo: (src.schoolNo || '').trim(),
+    passwordPrefix: src.passwordPrefix || 'Stu',
+    queryUid: (src.queryUid || '').trim(),
+    uidList: src.uidList || '',
+  };
 }
 
 function flashButton(btn, text, ms = 1500) {
