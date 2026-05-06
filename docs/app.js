@@ -185,15 +185,6 @@ function loadConfig({ silent = false } = {}) {
   }
 }
 
-function clearConfig() {
-  if (!confirm('确认清除浏览器中保存的配置？清除后需要重新导入 JSON 密钥才能继续使用。')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  applyConfig(DEFAULT_CONFIG);
-  info('已清除浏览器配置');
-  flashButton($('btn-clear-config'), '✓ 已清除');
-  refreshConfigStatus();
-}
-
 function triggerImport() {
   $('cfg-file-input').click();
 }
@@ -615,7 +606,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('btn-import-config').addEventListener('click', triggerImport);
   $('cfg-file-input').addEventListener('change', handleImportFile);
-  $('btn-clear-config').addEventListener('click', clearConfig);
 
   $('btn-build-auth').addEventListener('click', handleBuildAuth);
   $('btn-send-auth').addEventListener('click', handleSendAuth);
