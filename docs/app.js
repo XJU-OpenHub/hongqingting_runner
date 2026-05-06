@@ -194,26 +194,6 @@ function clearConfig() {
   refreshConfigStatus();
 }
 
-function exportConfigJSON() {
-  if (!isConfigLoaded()) {
-    if (!confirm('当前没有有效配置，仍要导出空模板吗？')) return;
-  }
-  const c = readConfig();
-  const json = JSON.stringify(c, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  a.href = url;
-  a.download = `hqt-runner-config-${ts}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  info(`已导出配置到 ${a.download}（${json.length} 字节）`);
-  flashButton($('btn-export-config'), '✓ 已导出');
-}
-
 function triggerImport() {
   $('cfg-file-input').click();
 }
@@ -635,7 +615,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('btn-import-config').addEventListener('click', triggerImport);
   $('cfg-file-input').addEventListener('change', handleImportFile);
-  $('btn-export-config').addEventListener('click', exportConfigJSON);
   $('btn-clear-config').addEventListener('click', clearConfig);
 
   $('btn-build-auth').addEventListener('click', handleBuildAuth);
