@@ -187,6 +187,14 @@ button.danger {
   background: var(--danger);
 }
 
+button.flash-ok,
+button.flash-ok:hover {
+  background: var(--ok) !important;
+  color: #fff !important;
+  border-color: var(--ok) !important;
+  transition: background-color 0.15s ease;
+}
+
 .preview {
   background: var(--panel-2);
   border: 1px solid var(--border);

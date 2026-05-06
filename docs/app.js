@@ -126,32 +126,98 @@ function applyConfig(c) {
   $('cfg-uid-list').value = c.uidList || '';
 }
 
+function flashButton(btn, text, ms = 1500) {
+  if (!btn) return;
+  if (btn._flashTimer) {
+    clearTimeout(btn._flashTimer);
+    btn.textContent = btn._flashOrig;
+  }
+  btn._flashOrig = btn.textContent;
+  btn.textContent = text;
+  btn.classList.add('flash-ok');
+  btn._flashTimer = setTimeout(() => {
+    btn.textContent = btn._flashOrig;
+    btn.classList.remove('flash-ok');
+    btn._flashTimer = null;
+  }, ms);
+}
+
 function saveConfig() {
   const c = readConfig();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
-  info('已保存配置到 localStorage');
+  info('已保存配置到浏览器 localStorage');
+  flashButton($('btn-save-config'), '✓ 已保存');
 }
 
-function loadConfig() {
+function loadConfig({ silent = false } = {}) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     applyConfig(DEFAULT_CONFIG);
-    info('未找到本地配置，已应用默认值（空）');
-    return;
+    if (!silent) info('未找到浏览器配置，已应用默认值（空）');
+    return false;
   }
   try {
     applyConfig({ ...DEFAULT_CONFIG, ...JSON.parse(raw) });
-    info('已从 localStorage 加载配置');
+    if (!silent) info('已从浏览器 localStorage 加载配置');
+    flashButton($('btn-load-config'), '✓ 已加载');
+    return true;
   } catch (e) {
     errr('localStorage 配置解析失败：', e.message);
     applyConfig(DEFAULT_CONFIG);
+    return false;
   }
 }
 
 function clearConfig() {
+  if (!confirm('确认清除浏览器中保存的配置？（不会影响已经导出的 JSON 文件）')) return;
   localStorage.removeItem(STORAGE_KEY);
   applyConfig(DEFAULT_CONFIG);
-  info('已清除本地配置');
+  info('已清除浏览器配置');
+  flashButton($('btn-clear-config'), '✓ 已清除');
+}
+
+function exportConfigJSON() {
+  const c = readConfig();
+  const json = JSON.stringify(c, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  a.href = url;
+  a.download = `hqt-runner-config-${ts}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  info(`已导出配置到 ${a.download}（${json.length} 字节）`);
+  flashButton($('btn-export-config'), '✓ 已导出');
+}
+
+function triggerImport() {
+  $('cfg-file-input').click();
+}
+
+async function handleImportFile(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const obj = JSON.parse(text);
+    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+      throw new Error('JSON 顶层必须是一个对象');
+    }
+    applyConfig({ ...DEFAULT_CONFIG, ...obj });
+    // 同时写入 localStorage，方便下次自动加载
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(readConfig()));
+    info(`已从 ${file.name} 导入配置（已同步写入浏览器 localStorage）`);
+    flashButton($('btn-import-config'), '✓ 已导入');
+  } catch (e) {
+    errr(`导入失败：${e.message}`);
+    alert(`导入失败：${e.message}`);
+  } finally {
+    // 清空 input.value 以便下次能重选同一个文件
+    ev.target.value = '';
+  }
 }
 
 function getUidList() {
@@ -543,10 +609,13 @@ function handleStopUpload() {
 /* ----------------------------- 启动 ----------------------------- */
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadConfig();
+  loadConfig({ silent: true });
 
   $('btn-save-config').addEventListener('click', saveConfig);
-  $('btn-load-config').addEventListener('click', loadConfig);
+  $('btn-load-config').addEventListener('click', () => loadConfig());
+  $('btn-export-config').addEventListener('click', exportConfigJSON);
+  $('btn-import-config').addEventListener('click', triggerImport);
+  $('cfg-file-input').addEventListener('change', handleImportFile);
   $('btn-clear-config').addEventListener('click', clearConfig);
 
   $('btn-build-auth').addEventListener('click', handleBuildAuth);

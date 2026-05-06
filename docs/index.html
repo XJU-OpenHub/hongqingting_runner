@@ -19,7 +19,12 @@
     <!-- ============ 1. 服务器配置 ============ -->
     <section id="config-section">
       <h2>① 服务器配置</h2>
-      <p class="hint">所有接口地址、学校代码、密码盐都是配置项。保存后写入浏览器 localStorage，不会发送到任何外部站点。</p>
+      <p class="hint">
+        两种保存方式可选：
+        <strong>① 保存到浏览器</strong> — 写入当前浏览器 localStorage，下次打开同一浏览器自动加载；
+        <strong>② 导出为 JSON 文件</strong> — 下载到本地，方便备份 / 多设备迁移 / 发给学生当模板。
+        配置不会发送到任何外部站点。
+      </p>
       <div class="grid">
         <label>登录接口 URL
           <input id="cfg-auth-url" type="text" placeholder="https://your-server.example.com/cloud/DflyServer" />
@@ -44,9 +49,12 @@
         </label>
       </div>
       <div class="actions">
-        <button id="btn-save-config">保存到本地</button>
-        <button id="btn-load-config" class="secondary">从本地加载</button>
-        <button id="btn-clear-config" class="danger">清除本地配置</button>
+        <button id="btn-save-config">保存到浏览器</button>
+        <button id="btn-load-config" class="secondary">从浏览器加载</button>
+        <button id="btn-export-config" class="secondary">导出为 JSON 文件</button>
+        <button id="btn-import-config" class="secondary">从 JSON 文件导入</button>
+        <button id="btn-clear-config" class="danger">清除浏览器配置</button>
+        <input id="cfg-file-input" type="file" accept="application/json,.json" hidden />
       </div>
     </section>
 
