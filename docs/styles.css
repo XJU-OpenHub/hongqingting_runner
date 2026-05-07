@@ -501,17 +501,37 @@ textarea.config-input {
   resize: vertical;
 }
 
-.batch-log {
-  font-family: var(--mono);
-  font-size: 12px;
-  background: var(--panel-2);
+.progress-wrap {
+  margin-top: 14px;
+}
+.progress-bar {
+  height: 16px;
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 10px 12px;
-  max-height: 320px;
-  overflow: auto;
-  margin-top: 12px;
-  white-space: pre-wrap;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #5cb8ff, #ff9bd0, #ffb37a);
+  background-size: 200% 100%;
+  border-radius: 999px;
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: progress-shimmer 2.4s linear infinite;
+}
+@keyframes progress-shimmer {
+  0%   { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+.progress-meta {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .split-2col {

@@ -64,7 +64,11 @@
         </div>
         <button class="btn" id="btn-batch-start">开始</button>
         <button class="btn secondary" id="btn-batch-stop" disabled>停止</button>
-        <div class="batch-log" id="batch-log"></div>
+        <div class="progress-wrap" id="batch-progress" hidden>
+          <div class="progress-bar"><div class="progress-fill" id="batch-progress-fill"></div></div>
+          <div class="progress-meta" id="batch-progress-meta">准备中…</div>
+        </div>
+        <div class="result-panel" id="batch-final"></div>
       </div>
 
     </div>
@@ -242,8 +246,8 @@
   };
 
   // ============ Wire up: summary ===========================================
-  function renderSummary(data) {
-    const el = document.getElementById("result-summary");
+  function renderSummary(data, targetId) {
+    const el = document.getElementById(targetId || "result-summary");
     el.innerHTML = "";
 
     const m = (data.parsed && data.parsed.m) || "";
@@ -315,10 +319,13 @@
   const BATCH_UID_IDX   = 0;
 
   let batchAbort = false;
-  function logBatch(line) {
-    const el = document.getElementById("batch-log");
-    el.textContent += line + "\n";
-    el.scrollTop = el.scrollHeight;
+  function setProgress(done, total, statusText) {
+    const wrap = document.getElementById("batch-progress");
+    wrap.hidden = false;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    document.getElementById("batch-progress-fill").style.width = pct + "%";
+    document.getElementById("batch-progress-meta").innerHTML =
+      `<span>${statusText}</span><span>${done} / ${total} · ${pct}%</span>`;
   }
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -335,14 +342,16 @@
 
     document.getElementById("btn-batch-start").disabled = true;
     document.getElementById("btn-batch-stop").disabled = false;
-    document.getElementById("batch-log").textContent = "";
+    document.getElementById("batch-final").innerHTML = "";
     batchAbort = false;
+    let okCount = 0, failCount = 0;
+    setProgress(0, count, "准备开始…");
 
     for (let i = 0; i < count && !batchAbort; i++) {
       const day = i - offset;  // mirrors hongqingting.py: PostRunData_*(no, i-0.3, uid)
-      logBatch(`[${i + 1}/${count}] day=${day.toFixed(2)} …`);
+      setProgress(i, count, `上传中 day=${day.toFixed(2)}`);
       try {
-        const data = await doUpload({
+        await doUpload({
           no, track,
           distance:      def.distance,
           baseUseTime:   def.baseUseTime,
@@ -350,14 +359,33 @@
           day,
           uidIdx:        BATCH_UID_IDX,
         });
-        const dbg = data.debug || {};
-        logBatch(`  ✓ ${dbg.begintimeFormatted} → ${dbg.endtimeFormatted}  ${dbg.distanceMeters}m / ${dbg.usetimeSeconds}s`);
+        okCount++;
       } catch (e) {
-        logBatch(`  ✗ ${e.message}`);
+        failCount++;
       }
+      setProgress(i + 1, count, `上传中 day=${day.toFixed(2)}`);
       if (i < count - 1 && !batchAbort) await sleep(BATCH_DELAY_SEC * 1000);
     }
-    logBatch(batchAbort ? "已停止" : "完成");
+
+    const tail = batchAbort ? "已停止" : "完成";
+    setProgress(okCount + failCount, count,
+      `${tail}：成功 ${okCount}${failCount ? `，失败 ${failCount}` : ""}`);
+
+    // 查询最新里程显示在下方
+    if (!batchAbort && okCount > 0) {
+      try {
+        const data = await callProxy("/proxy/summary", {
+          summaryUrl: CFG.summaryUrl,
+          schoolNo: CFG.schoolNo,
+          studentNo: no,
+          queryUid: CFG.queryUid,
+        });
+        renderSummary(data, "batch-final");
+      } catch (e) {
+        document.getElementById("batch-final").textContent = "里程查询失败：" + e.message;
+      }
+    }
+
     document.getElementById("btn-batch-start").disabled = false;
     document.getElementById("btn-batch-stop").disabled = true;
   };
