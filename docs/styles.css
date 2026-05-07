@@ -534,17 +534,6 @@ textarea.config-input {
   justify-content: space-between;
 }
 
-.split-2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: start;
-}
-.split-2col > .card { margin: 0; }
-@media (max-width: 880px) {
-  .split-2col { grid-template-columns: 1fr; }
-}
-
 .headline {
   margin: 14px 0 4px;
   font-family: var(--mono);
