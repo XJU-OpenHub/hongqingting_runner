@@ -429,37 +429,39 @@ button.btn {
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: #fff;
-  background: linear-gradient(180deg, #ffa6d3 0%, #ff7eb9 100%);
-  border: none;
+  color: #1c2530;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f1f5 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   padding: 10px 22px;
   cursor: pointer;
   margin: 4px 8px 4px 0;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 1px 2px rgba(0, 0, 0, 0.12),
-    0 6px 20px rgba(255, 126, 185, 0.32);
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(0, 0, 0, 0.10),
+    0 6px 18px rgba(0, 0, 0, 0.16);
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.15s ease,
               filter 0.15s ease;
 }
 button.btn:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e8ee 100%);
   transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    0 2px 4px rgba(0, 0, 0, 0.14),
-    0 10px 28px rgba(255, 126, 185, 0.42);
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 4px rgba(0, 0, 0, 0.12),
+    0 10px 26px rgba(0, 0, 0, 0.20);
 }
 button.btn:active {
   transform: translateY(0);
-  filter: brightness(0.94);
+  filter: brightness(0.96);
 }
 button.btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 button.btn.secondary {
   color: var(--text);
