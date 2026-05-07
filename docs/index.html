@@ -69,6 +69,24 @@
 
     </div>
 
+    <div class="callout callout-warn" style="margin-top: 18px;">
+      <strong>已知问题：</strong>
+      目前只有 <code>location_1_6km · 1.6 km</code> 这条轨迹是调通的，其他三条
+      （<code>1km</code> / <code>1.16km</code> / <code>12km</code>）还有 bug，
+      暂时不要选。
+    </div>
+
+    <div class="callout" style="margin-top: 12px;">
+      <strong>批量上传两个变量怎么理解：</strong>
+      <ul style="margin: 8px 0 0;">
+        <li><strong>往前推多少天</strong> = 一共循环几次。例如填 30，就跑 30 次。</li>
+        <li><strong>每天偏移 (i - 此值)</strong> = 每次的"距今多少天" = <code>i - 此值</code>，<code>i</code>
+        从 0 数到 N-1。例如 30 / 0.3 会产生
+        <code>day = -0.3, 0.7, 1.7, …, 28.7</code>，即从今天前后开始，往过去推到约 28.7 天前。
+        填 <code>0</code> 就是严格的 <code>0, 1, 2, …</code>；负值会让运动时间整体往未来挪。</li>
+      </ul>
+    </div>
+
   </div>
 
   <script>
