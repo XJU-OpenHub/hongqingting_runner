@@ -236,6 +236,36 @@
   };
 
   // ============ Wire up: summary ===========================================
+  function renderSummary(data) {
+    const el = document.getElementById("result-summary");
+    el.innerHTML = "";
+
+    // Pull km out of m, e.g. "\r\napp跑步:108.831公里"
+    const m = (data.parsed && data.parsed.m) || "";
+    const km = (m.match(/(-?\d+(\.\d+)?)\s*公里/) || [])[1];
+
+    if (km !== undefined) {
+      const head = document.createElement("div");
+      head.className = "headline";
+      head.innerHTML = `<span class="num">${km}</span><span class="unit">公里</span>`;
+      el.appendChild(head);
+    }
+    if (data.parsed && data.parsed.lasttimeFormatted) {
+      const sub = document.createElement("div");
+      sub.className = "headline-sub";
+      sub.textContent = `上次跑步：${data.parsed.lasttimeFormatted}`;
+      el.appendChild(sub);
+    }
+
+    const d = document.createElement("details");
+    d.className = "debug-section";
+    d.innerHTML = `<summary>原始返回</summary><pre></pre>`;
+    d.querySelector("pre").textContent = JSON.stringify(
+      {upstreamStatus: data.upstreamStatus, parsed: data.parsed,
+       upstreamBody: data.upstreamBody, debug: data.debug}, null, 2);
+    el.appendChild(d);
+  }
+
   document.getElementById("btn-summary").onclick = async () => {
     const no = document.getElementById("sum-no").value.trim();
     if (!no) return alert("请输入学号");
@@ -247,7 +277,7 @@
         studentNo: no,
         queryUid: CFG.queryUid,
       });
-      renderResult("result-summary", data, "OK", "ok");
+      renderSummary(data);
     } catch (e) {
       renderResult("result-summary", e.detail || {error: e.message}, "ERR", "err");
     }

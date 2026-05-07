@@ -477,3 +477,24 @@ textarea.config-input {
 @media (max-width: 880px) {
   .split-2col { grid-template-columns: 1fr; }
 }
+
+.headline {
+  margin: 14px 0 4px;
+  font-family: var(--mono);
+}
+.headline .num {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+.headline .unit {
+  font-size: 16px;
+  color: var(--text-dim);
+  margin-left: 6px;
+}
+.headline-sub {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin: 2px 0 12px;
+}
