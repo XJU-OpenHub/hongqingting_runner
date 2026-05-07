@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloudflare Quick Tunnel for hongqingting_runner
+After=network.target hongqingting-api.service
+Requires=hongqingting-api.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+{
+  "_note": "把所有 URL 换成你课堂的 mock 地址。proxyUrl 是教学代理（cloudflared 隧道），URL 每次重启会变 —— 用 server.md 里的 systemctl restart + journalctl 命令可拿到当前最新 URL。",
+  "proxyUrl": "https://recording-vbulletin-acrobat-duty.trycloudflare.com",
+  "authUrl": "http://your-classroom-mock.example.com/cloud/DflyServer",
+  "summaryUrl": "http://your-classroom-mock.example.com/api/webserver/getRunDataSummary",
+  "uploadUrl": "http://your-classroom-mock.example.com/api/webserver/uploadRunData",
+  "schoolNo": "10755",
+  "passwordPrefix": "Stu",
+  "queryUid": "REPLACE_WITH_MOCK_QUERY_UID",
+  "uidList": "REPLACE_UID_1\nREPLACE_UID_2\nREPLACE_UID_3\nREPLACE_UID_4\nREPLACE_UID_5"
+}

@@ -1,8 +1,18 @@
 # 红蜻蜓脚本工具 🐉
 
-这是一个基于 Python 的红蜻蜓刷公里数项目。
+网络安全教学案例：以"红蜻蜓体育跑步打卡"客户端伪造为切入点，讲 HTTP 请求构造、
+gzip / MD5 / form-urlencoded 编码、浏览器 Mixed Content + CORS 拦截原理、
+以及服务端反作弊视角。
 
-> ⚠️ 本项目会向远端服务器发送真实 HTTP 请求。请仅在你本人账号、合法授权和合规场景下使用，不要用于伪造、篡改或代替他人提交数据。
+提供两种使用形态：
+
+- **Python CLI 模式**（仓库根目录）：`hongqingting.py` 原版脚本，本节后续介绍。
+- **Web 演示模式**（`docs/` + `server/`）：在 GitHub Pages 上点击操作，请求由
+  `server/app.py`（FastAPI 代理）通过 cloudflared 隧道转发到你授权的教学 mock。
+  详见 [`docs/README.md`](docs/README.md) 和 [`server/README.md`](server/README.md)。
+
+> ⚠️ 本项目会向远端服务器发送真实 HTTP 请求。**只把目标 URL 指向你自己授权、自己控制的教学 mock**，
+> 不要用于伪造、篡改或代替他人向真实生产系统提交数据。
 
 ## 项目结构 📁
 
