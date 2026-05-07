@@ -80,10 +80,16 @@
       <strong>批量上传两个变量怎么理解：</strong>
       <ul style="margin: 8px 0 0;">
         <li><strong>往前推多少天</strong> = 要补多少天的跑步数据。填 <code>30</code> 就是从 30 天前一路补到今天，每天跑一次，共发 30 个包。</li>
-        <li><strong>每天偏移 (i - 此值)</strong> = 每次的"距今多少天" = <code>i - 此值</code>，<code>i</code>
-        从 0 数到 N-1。例如 30 / 0.3 会产生
-        <code>day = -0.3, 0.7, 1.7, …, 28.7</code>，即从今天前后开始，往过去推到约 28.7 天前。
-        填 <code>0</code> 就是严格的 <code>0, 1, 2, …</code>；负值会让运动时间整体往未来挪。</li>
+        <li><strong>每天偏移 (i - 此值)</strong> = 每次运动的开始时间相对"i 天前的此刻"挪多少。
+        Python 的 begintime 公式是 <code>现在 - (i - 此值) × 86400</code>，1 天 = 86400 秒，
+        所以 <code>0.1</code> 就是 2.4 小时。<br>
+        假设现在是下午 5 点：
+        <ul style="margin-top: 4px;">
+          <li>填 <code>0</code>：每次都严格在"i 天前的下午 5 点"开始</li>
+          <li>填 <code>0.3</code>：每次都比"i 天前的下午 5 点"<strong>晚 7.2 小时</strong>（约凌晨 0:12 开始，i=0 那次会落到明天凌晨）</li>
+          <li>填 <code>-0.3</code>：每次都比"i 天前的下午 5 点"<strong>早 7.2 小时</strong>（约上午 9:48 开始）</li>
+        </ul>
+        Python 原代码用的是 <code>0.3</code>，目的是让上传时间不要全卡在同一时刻、不要太规律。</li>
       </ul>
     </div>
 
