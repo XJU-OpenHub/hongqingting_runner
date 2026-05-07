@@ -1,72 +1,113 @@
-# server/ — 教学代理（FastAPI + cloudflared）
+# server/ — 教学代理（FastAPI + cloudflared + sk-token vault）
 
-把 Python `requests` 能做、浏览器 `fetch` 做不了的活（gzip 压缩、修改 User-Agent、跨源、
-HTTPS → HTTP 直接调）放在一台代理服务器上。前端通过 cloudflared HTTPS 快速隧道调用本服务。
+把 Python `requests` 能做、浏览器 `fetch` 做不了的活（gzip / 修改 UA / HTTPS→HTTP）放在
+代理服务器上。所有敏感配置（authUrl / summaryUrl / uploadUrl / queryUid / uidList）通过
+sk-xxx token 加密存放在服务器 vault 里，**不进仓库、不进前端、前端只需 sk**。
 
 ## 架构
 
 ```
 浏览器 (GitHub Pages, HTTPS)
-   │  fetch JSON → POST /proxy/auth | /proxy/summary | /proxy/upload
+   │  fetch docs/proxy.json → 拿到 cloudflared URL
+   │  POST /v1/summary | /v1/upload | /v1/check  +  {token: "sk-xxx", ...}
    ▼
 cloudflared quick tunnel (https://xxx-xxx.trycloudflare.com)
    │
    ▼
-FastAPI uvicorn @ 127.0.0.1:8000      ← 本目录代码
-   │  组装 form-urlencoded / gzip / MD5 / 轨迹时间戳重写
+FastAPI uvicorn @ 127.0.0.1:8000
+   │  vault.decrypt(token) → 拿出 authUrl / summaryUrl / queryUid …
+   │  做 gzip / MD5 / 轨迹时间戳重写 / 上游 POST
    ▼
-你授权的教学 mock (HTTP, 内网或公网都行)
+你授权的教学 mock (HTTP)
 ```
 
-## 三个端点
+## 文件结构
 
-| 端点 | 等价于原 Python 函数 | 备注 |
+```
+/opt/hongqingting_runner/
+├── app.py
+├── vault.py
+├── venv/
+├── trajectories/          # location_*km，被后端读取
+│   ├── location_1km
+│   ├── location_1_16km
+│   ├── location_1_6km
+│   └── location_12km
+└── secrets/
+    └── vault.json         # 0600，sk → ciphertext，绝不要 commit
+```
+
+## 端点
+
+| 端点 | 入参 | 用途 |
 | --- | --- | --- |
-| `POST /proxy/auth` | `GetStuInfo()` | form-urlencoded，密码 = `passwordPrefix + studentNo` 取 MD5 |
-| `POST /proxy/summary` | `GetRunMeter()` | gzip JSON，需要 `queryUid` |
-| `POST /proxy/upload` | `PostRunData_*km()` | gzip JSON，重写每帧轨迹时间戳到 `[begintime, begintime+usetime]` 区间 |
-| `GET  /tunnel-info` | — | 读 cloudflared journal，返回当前 trycloudflare URL |
+| `POST /v1/check`   | `{token}`                           | 验证 sk 是否有效，回显 schoolNo / uid 数 |
+| `POST /v1/summary` | `{token, studentNo}`                | 查询累计里程 |
+| `POST /v1/upload`  | `{token, studentNo, track, dayOffset, uidIdx?}` | 上传一次跑步数据 |
+| `GET  /tunnel-info`| —                                   | 读 cloudflared journal，返回当前 trycloudflare URL |
+| `GET  /`           | —                                   | 健康检查 |
 
-每个 POST 响应都附带 `debug` 字段：组装出来的明文 body、MD5、headers、gzip 长度——前端
-教学面板直接展示给学生看。
-
-## 部署（Ubuntu 22.04 已实测）
+## vault CLI
 
 ```bash
-# 1) 安装系统包
-apt-get install -y python3-venv
+cd /opt/hongqingting_runner
 
-# 2) 安装 cloudflared（如 GitHub 直连慢，本地下完 scp 上去）
-dpkg -i cloudflared-linux-amd64.deb
+# 加密一份配置 → 输出 sk-xxx
+cat config.json | ./venv/bin/python -m vault add "label-here"
+# → sk-jtYKD2A-...
 
-# 3) 安装 Python 依赖
-mkdir -p /opt/hongqingting_runner && cd /opt/hongqingting_runner
-python3 -m venv venv
-./venv/bin/pip install --index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    fastapi "uvicorn[standard]" httpx
+# 列出所有 token（只显示 hash 索引 + label + 创建时间）
+./venv/bin/python -m vault list
 
-# 4) 把 app.py 放到 /opt/hongqingting_runner/
+# 删除某个 sk
+./venv/bin/python -m vault delete sk-xxx
 
-# 5) systemd
-systemctl daemon-reload
-systemctl enable --now hongqingting-api.service
-systemctl enable --now cloudflared-tunnel.service
+# 解密验证（应输出原始 JSON）
+./venv/bin/python -m vault decrypt sk-xxx
 ```
 
-systemd unit 文件示例见 `unit-files/`。
+`config.json` 必填字段（不再需要 `proxyUrl`，由 `docs/proxy.json` 单独管理）：
 
-## 拿当前 cloudflared URL
+```json
+{
+  "authUrl": "http://your-mock/.../DflyServer",
+  "summaryUrl": "http://your-mock/.../getRunDataSummary",
+  "uploadUrl": "http://your-mock/.../uploadRunData",
+  "schoolNo": "10755",
+  "passwordPrefix": "Stu",
+  "queryUid": "...",
+  "uidList": "uid_a\nuid_b\nuid_c"
+}
+```
+
+## 加密设计
+
+- 每个 sk-xxx 的 Fernet 密钥 = `urlsafe_b64(SHA-256(sk))`
+- 索引到 vault.json 的 key = `SHA-256("idx::" + sk)[:32]`（用不同前缀避免与加密密钥共用 hash）
+- 对手即便拿到 `vault.json` 也解不出明文，因为没有 sk
+- sk 丢了 → 数据无法找回，重新加密一份新的
+- vault 文件强制 0600，目录 0700
+
+## 部署变更
 
 ```bash
-journalctl -u cloudflared-tunnel -n 50 | grep trycloudflare
-# 或
-curl http://127.0.0.1:8000/tunnel-info
+# 安装新依赖
+/opt/hongqingting_runner/venv/bin/pip install cryptography
+
+# 部署 / 升级代码
+scp app.py vault.py root@server:/opt/hongqingting_runner/
+systemctl restart hongqingting-api
 ```
 
-## 排错
+## cloudflared URL 变化处理
 
-- `502 upstream error` — 代理能转发，但目标 mock 不可达。检查 mock 是否开着、IP/端口对不对。
-- 前端 fetch 报 CORS — 已配 `allow_origins=["*"]`，如果还报，看是不是 cloudflared URL 拼错了
-  （URL 重启会变）。
-- `usetime <= 0` — `baseUseTime` 太短，或 `useTimeJitter` 被 `random.randint` 减得太多。
-  调大 `baseUseTime`。
+URL 重启会变。两步恢复：
+
+```bash
+# 1) 服务器上拿当前 URL
+ssh root@server 'curl -s http://127.0.0.1:8000/tunnel-info'
+
+# 2) 本地改 docs/proxy.json 里的 proxyUrl，commit + push
+```
+
+GitHub Actions 1–2 分钟内自动部署，前端 `fetch('proxy.json')` 拿到新 URL。

@@ -1,0 +1,4 @@
+{
+  "_note": "cloudflared quick-tunnel URL. 重启会变，变了就改这一行 commit+push，1–2 分钟生效。",
+  "proxyUrl": "https://toolkit-nomination-mood-announcement.trycloudflare.com"
+}

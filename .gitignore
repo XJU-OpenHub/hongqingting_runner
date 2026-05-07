@@ -1,0 +1,11 @@
+# Server-side secrets (never commit)
+server/secrets/
+secrets/
+*.key
+vault.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

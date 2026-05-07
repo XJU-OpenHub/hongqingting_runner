@@ -13,26 +13,18 @@
 
   <div class="runner-layout">
 
-    <!-- ===== Config ===== -->
+    <!-- ===== API key ===== -->
     <div class="card" id="card-config">
-      <h3>配置导入</h3>
-      <p class="status-line" id="config-status">尚未导入配置。粘贴你的 JSON 或选择文件。</p>
-      <textarea class="config-input" id="config-input" placeholder='{
-  "proxyUrl": "https://xxx-xxx.trycloudflare.com",
-  "authUrl": "http://your-mock.example.com/cloud/DflyServer",
-  "summaryUrl": "http://your-mock.example.com/.../getRunDataSummary",
-  "uploadUrl": "http://your-mock.example.com/.../uploadRunData",
-  "schoolNo": "10755",
-  "passwordPrefix": "Stu",
-  "queryUid": "...",
-  "uidList": "uid_a\nuid_b\nuid_c"
-}'></textarea>
-      <div style="margin-top: 10px;">
-        <button class="btn" id="btn-load-config">导入</button>
-        <input type="file" id="config-file" accept="application/json,.json" style="display:none" />
-        <button class="btn secondary" id="btn-pick-file">选择文件</button>
-        <button class="btn secondary" id="btn-clear-config">清空</button>
+      <h3>API Key</h3>
+      <p class="status-line" id="config-status">尚未输入 API Key。</p>
+      <div class="field-grid" style="margin-top: 4px;">
+        <div class="field" style="grid-column: 1 / -1;">
+          <label>sk-xxx</label>
+          <input id="api-key" type="text" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
+        </div>
       </div>
+      <button class="btn" id="btn-save-key">保存并验证</button>
+      <button class="btn secondary" id="btn-clear-key">清空</button>
     </div>
 
       <div class="card">
@@ -96,58 +88,56 @@
   </div>
 
   <script>
-  // ============ Config state ===============================================
-  const CONFIG_KEY = "hongqingting_runner.config.v1";
-  let CFG = null;
+  // ============ State ======================================================
+  const KEY_STORE   = "hongqingting_runner.apiKey.v1";
+  const PROXY_PATH  = "proxy.json";
 
-  function loadConfigFromStorage() {
-    const raw = localStorage.getItem(CONFIG_KEY);
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
-  }
-  function saveConfig(cfg) {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-  }
-  function clearConfig() {
-    localStorage.removeItem(CONFIG_KEY);
-  }
-  function validateConfig(cfg) {
-    const required = ["proxyUrl", "authUrl", "summaryUrl", "uploadUrl",
-                      "schoolNo", "passwordPrefix", "queryUid", "uidList"];
-    for (const k of required) if (!(k in cfg)) throw new Error("缺少字段: " + k);
-    if (typeof cfg.uidList !== "string") throw new Error("uidList 应为换行分隔的字符串");
-    for (const k of ["proxyUrl", "authUrl", "summaryUrl", "uploadUrl"]) {
-      const v = String(cfg[k] || "").trim();
-      if (!/^https?:\/\//i.test(v)) {
-        throw new Error(`${k} 必须以 http:// 或 https:// 开头，当前: "${v}"`);
-      }
+  let API_KEY  = localStorage.getItem(KEY_STORE) || "";
+  let PROXY_URL = "";
+  let KEY_INFO = null;  // {valid, schoolNo, uidCount}
+
+  async function loadProxyUrl() {
+    try {
+      const r = await fetch(PROXY_PATH + "?t=" + Date.now());
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      if (!j.proxyUrl) throw new Error("proxy.json 没有 proxyUrl 字段");
+      PROXY_URL = j.proxyUrl.replace(/\/+$/, "");
+    } catch (e) {
+      console.error("加载 proxy.json 失败", e);
+      alert("加载代理地址失败: " + e.message + "\n\n请检查 docs/proxy.json 是否存在");
     }
-    return true;
-  }
-  function uidArray(cfg) {
-    return (cfg.uidList || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
   }
 
   function refreshConfigUI() {
     const status = document.getElementById("config-status");
-    if (!CFG) {
-      status.textContent = "尚未导入配置。粘贴你的 JSON 或选择文件。";
+    const input  = document.getElementById("api-key");
+    input.value = API_KEY;
+    if (!API_KEY) {
+      status.textContent = "尚未输入 API Key。";
       status.classList.remove("loaded");
       return;
     }
-    status.classList.add("loaded");
-    status.textContent =
-      `已加载: proxy=${CFG.proxyUrl} | schoolNo=${CFG.schoolNo} | uid 数=${uidArray(CFG).length}`;
+    if (KEY_INFO && KEY_INFO.valid) {
+      status.classList.add("loaded");
+      status.textContent =
+        `已验证: schoolNo=${KEY_INFO.schoolNo} | uid 数=${KEY_INFO.uidCount}`;
+    } else if (KEY_INFO && !KEY_INFO.valid) {
+      status.classList.remove("loaded");
+      status.textContent = "API Key 无效，请检查";
+    } else {
+      status.classList.remove("loaded");
+      status.textContent = "已保存，未验证";
+    }
   }
 
-  // ============ HTTP helpers ===============================================
-  async function callProxy(path, body) {
-    if (!CFG) throw new Error("未加载配置");
-    const url = CFG.proxyUrl.replace(/\/+$/, "") + path;
-    const resp = await fetch(url, {
+  async function callApi(path, body) {
+    if (!PROXY_URL) throw new Error("代理地址未加载");
+    if (!API_KEY)   throw new Error("未设置 API Key");
+    const resp = await fetch(PROXY_URL + path, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(body),
+      body: JSON.stringify({token: API_KEY, ...body}),
     });
     const text = await resp.text();
     let data;
@@ -160,10 +150,14 @@
     return data;
   }
 
-  async function fetchTrack(name) {
-    const r = await fetch(`assets/${name}`);
-    if (!r.ok) throw new Error(`轨迹文件 ${name} 加载失败 (${r.status})`);
-    return await r.text();
+  async function verifyKey() {
+    try {
+      const r = await callApi("/v1/check", {});
+      KEY_INFO = r;
+    } catch (e) {
+      KEY_INFO = {valid: false, error: e.message};
+    }
+    refreshConfigUI();
   }
 
   // ============ Render helpers =============================================
@@ -213,31 +207,21 @@
     }
   }
 
-  // ============ Wire up: config ============================================
-  document.getElementById("btn-load-config").onclick = () => {
-    const txt = document.getElementById("config-input").value.trim();
-    try {
-      const cfg = JSON.parse(txt);
-      validateConfig(cfg);
-      CFG = cfg; saveConfig(cfg); refreshConfigUI();
-      alert("配置已导入");
-    } catch (e) { alert("导入失败: " + e.message); }
+  // ============ Wire up: api key ===========================================
+  document.getElementById("btn-save-key").onclick = async () => {
+    const v = document.getElementById("api-key").value.trim();
+    if (!v) return alert("请输入 sk-xxx");
+    if (!/^sk-/.test(v)) return alert("API Key 必须以 sk- 开头");
+    API_KEY = v;
+    localStorage.setItem(KEY_STORE, v);
+    KEY_INFO = null; refreshConfigUI();
+    await verifyKey();
+    if (!KEY_INFO || !KEY_INFO.valid) alert("API Key 验证失败，请检查");
   };
-  document.getElementById("btn-pick-file").onclick = () => {
-    document.getElementById("config-file").click();
-  };
-  document.getElementById("config-file").onchange = (ev) => {
-    const f = ev.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      document.getElementById("config-input").value = r.result;
-      document.getElementById("btn-load-config").click();
-    };
-    r.readAsText(f);
-  };
-  document.getElementById("btn-clear-config").onclick = () => {
-    if (!confirm("清空已导入的配置？")) return;
-    CFG = null; clearConfig(); document.getElementById("config-input").value = "";
+  document.getElementById("btn-clear-key").onclick = () => {
+    if (!confirm("清空 API Key？")) return;
+    API_KEY = ""; KEY_INFO = null;
+    localStorage.removeItem(KEY_STORE);
     refreshConfigUI();
   };
 
@@ -271,46 +255,16 @@
   document.getElementById("btn-summary").onclick = async () => {
     const no = document.getElementById("sum-no").value.trim();
     if (!no) return alert("请输入学号");
-    if (!CFG) return alert("请先导入配置");
+    if (!API_KEY) return alert("请先保存 API Key");
     try {
-      const data = await callProxy("/proxy/summary", {
-        summaryUrl: CFG.summaryUrl,
-        schoolNo: CFG.schoolNo,
-        studentNo: no,
-        queryUid: CFG.queryUid,
-      });
+      const data = await callApi("/v1/summary", {studentNo: no});
       renderSummary(data);
     } catch (e) {
       renderResult("result-summary", e.detail || {error: e.message}, "ERR", "err");
     }
   };
 
-  // ============ Wire up: upload ============================================
-  async function doUpload({no, track, distance, baseUseTime, useTimeJitter, day, uidIdx}) {
-    const arr = uidArray(CFG);
-    if (uidIdx < 0 || uidIdx >= arr.length) throw new Error("uid 序号越界");
-    const locationText = await fetchTrack(track);
-    return await callProxy("/proxy/upload", {
-      uploadUrl: CFG.uploadUrl,
-      schoolNo: CFG.schoolNo,
-      studentNo: no,
-      uid: arr[uidIdx],
-      distance: Number(distance),
-      locationText,
-      dayOffset: Number(day),
-      baseUseTime: Number(baseUseTime),
-      useTimeJitter: Number(useTimeJitter),
-    });
-  }
-
   // ============ Wire up: batch =============================================
-  // Per-track defaults that mirror hongqingting.py's PostRunData_*km() functions.
-  const TRACK_DEFAULTS = {
-    location_1km:    {distance: 1000,  baseUseTime: 320,  useTimeJitter: 100},
-    location_1_16km: {distance: 1160,  baseUseTime: 320,  useTimeJitter: 900},
-    location_1_6km:  {distance: 1600,  baseUseTime: 320,  useTimeJitter: 100},
-    location_12km:   {distance: 12000, baseUseTime: 5800, useTimeJitter: 600},
-  };
   const BATCH_DELAY_SEC = 2;
   const BATCH_UID_IDX   = 0;
 
@@ -326,7 +280,7 @@
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   document.getElementById("btn-batch-start").onclick = async () => {
-    if (!CFG) return alert("请先导入配置");
+    if (!API_KEY) return alert("请先保存 API Key");
     const no    = document.getElementById("b-no").value.trim();
     if (!no) return alert("请输入学号");
     const track = document.getElementById("b-track").value;
@@ -334,7 +288,6 @@
     if (!Number.isFinite(count) || count < 1) return alert("「往前推多少天」必须是 ≥1 的整数");
     const offset = parseFloat(document.getElementById("b-offset").value);
     if (!Number.isFinite(offset)) return alert("「每天偏移」必须是数字");
-    const def    = TRACK_DEFAULTS[track];
 
     document.getElementById("btn-batch-start").disabled = true;
     document.getElementById("btn-batch-stop").disabled = false;
@@ -344,16 +297,14 @@
     setProgress(0, count, "准备开始…");
 
     for (let i = 0; i < count && !batchAbort; i++) {
-      const day = i - offset;  // mirrors hongqingting.py: PostRunData_*(no, i-0.3, uid)
+      const day = i - offset;
       setProgress(i, count, `上传中 day=${day.toFixed(2)}`);
       try {
-        await doUpload({
-          no, track,
-          distance:      def.distance,
-          baseUseTime:   def.baseUseTime,
-          useTimeJitter: def.useTimeJitter,
-          day,
-          uidIdx:        BATCH_UID_IDX,
+        await callApi("/v1/upload", {
+          studentNo: no,
+          track,
+          dayOffset: day,
+          uidIdx: BATCH_UID_IDX,
         });
         okCount++;
       } catch (e) {
@@ -367,15 +318,9 @@
     setProgress(okCount + failCount, count,
       `${tail}：成功 ${okCount}${failCount ? `，失败 ${failCount}` : ""}`);
 
-    // 查询最新里程显示在下方
     if (!batchAbort && okCount > 0) {
       try {
-        const data = await callProxy("/proxy/summary", {
-          summaryUrl: CFG.summaryUrl,
-          schoolNo: CFG.schoolNo,
-          studentNo: no,
-          queryUid: CFG.queryUid,
-        });
+        const data = await callApi("/v1/summary", {studentNo: no});
         renderSummary(data, "batch-final");
       } catch (e) {
         document.getElementById("batch-final").textContent = "里程查询失败：" + e.message;
@@ -388,11 +333,11 @@
   document.getElementById("btn-batch-stop").onclick = () => { batchAbort = true; };
 
   // ============ Init =======================================================
-  CFG = loadConfigFromStorage();
-  if (CFG) {
-    document.getElementById("config-input").value = JSON.stringify(CFG, null, 2);
-  }
-  refreshConfigUI();
+  (async () => {
+    refreshConfigUI();
+    await loadProxyUrl();
+    if (API_KEY) await verifyKey();
+  })();
   </script>
 </body>
 </html>
