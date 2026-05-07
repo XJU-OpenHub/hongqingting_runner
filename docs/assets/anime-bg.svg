@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="moon" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff8e0" stop-opacity="1"/>
+      <stop offset="0.4" stop-color="#fff5d6" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#fff5d6" stop-opacity="0"/>
+    </radialGradient>
+    <symbol id="petal" viewBox="-12 -16 24 32">
+      <path d="M0 -16 C-9 -10 -10 6 0 16 C10 6 9 -10 0 -16 Z" fill="#ffaecb"/>
+      <path d="M0 -10 C-3 -4 -3 6 0 12" stroke="#ff7ea4" stroke-width="0.6" fill="none" opacity="0.5"/>
+    </symbol>
+    <radialGradient id="star" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="white" stop-opacity="1"/>
+      <stop offset="0.4" stop-color="white" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- moon with halo -->
+  <circle cx="1520" cy="220" r="180" fill="url(#moon)" opacity="0.4"/>
+  <circle cx="1520" cy="220" r="68" fill="#fff8e0"/>
+  <circle cx="1490" cy="200" r="10" fill="#e8dfb8" opacity="0.6"/>
+  <circle cx="1545" cy="245" r="6"  fill="#e8dfb8" opacity="0.6"/>
+  <circle cx="1510" cy="250" r="4"  fill="#e8dfb8" opacity="0.5"/>
+
+  <!-- twinkling stars (mix of small dots and glow points) -->
+  <g fill="white">
+    <circle cx="80"   cy="120" r="1.2" opacity="0.85"/>
+    <circle cx="180"  cy="60"  r="0.9" opacity="0.8"/>
+    <circle cx="260"  cy="180" r="1.6" opacity="0.9"/>
+    <circle cx="340"  cy="90"  r="0.8" opacity="0.7"/>
+    <circle cx="420"  cy="220" r="1.3" opacity="0.85"/>
+    <circle cx="510"  cy="50"  r="1.0" opacity="0.8"/>
+    <circle cx="600"  cy="160" r="1.7" opacity="0.95"/>
+    <circle cx="700"  cy="100" r="0.9" opacity="0.75"/>
+    <circle cx="780"  cy="240" r="1.1" opacity="0.85"/>
+    <circle cx="880"  cy="60"  r="0.7" opacity="0.7"/>
+    <circle cx="950"  cy="180" r="1.4" opacity="0.9"/>
+    <circle cx="1050" cy="120" r="0.9" opacity="0.8"/>
+    <circle cx="1140" cy="40"  r="1.2" opacity="0.85"/>
+    <circle cx="1230" cy="200" r="0.8" opacity="0.75"/>
+    <circle cx="1330" cy="80"  r="1.5" opacity="0.95"/>
+    <circle cx="1700" cy="120" r="1.1" opacity="0.85"/>
+    <circle cx="1790" cy="60"  r="0.9" opacity="0.8"/>
+    <circle cx="1860" cy="200" r="1.3" opacity="0.9"/>
+    <circle cx="1450" cy="380" r="0.8" opacity="0.7"/>
+    <circle cx="1620" cy="450" r="1.0" opacity="0.8"/>
+    <circle cx="1820" cy="380" r="1.2" opacity="0.85"/>
+    <circle cx="120"  cy="320" r="0.9" opacity="0.75"/>
+    <circle cx="290"  cy="400" r="1.1" opacity="0.8"/>
+    <circle cx="430"  cy="350" r="0.7" opacity="0.7"/>
+    <circle cx="600"  cy="430" r="1.3" opacity="0.9"/>
+    <circle cx="780"  cy="380" r="0.8" opacity="0.75"/>
+    <circle cx="950"  cy="460" r="1.0" opacity="0.85"/>
+    <circle cx="1130" cy="380" r="0.9" opacity="0.8"/>
+    <circle cx="1290" cy="500" r="1.2" opacity="0.85"/>
+  </g>
+  <!-- bigger glow stars -->
+  <g>
+    <circle cx="600"  cy="160" r="6"  fill="url(#star)"/>
+    <circle cx="1330" cy="80"  r="5"  fill="url(#star)"/>
+    <circle cx="1860" cy="200" r="5"  fill="url(#star)"/>
+    <circle cx="260"  cy="180" r="4"  fill="url(#star)"/>
+    <circle cx="950"  cy="180" r="4"  fill="url(#star)"/>
+  </g>
+
+  <!-- distant mountain silhouette across bottom 1/3 -->
+  <path d="M0 760 L120 700 L260 740 L420 660 L580 720 L760 670 L900 730 L1080 680 L1260 720 L1440 660 L1620 740 L1800 690 L1920 740 L1920 1080 L0 1080 Z"
+        fill="#1a0d2e" opacity="0.65"/>
+  <path d="M0 880 L180 830 L380 870 L560 810 L760 870 L960 830 L1180 880 L1380 820 L1600 870 L1800 830 L1920 870 L1920 1080 L0 1080 Z"
+        fill="#0e0820" opacity="0.85"/>
+
+  <!-- floating sakura petals scattered across the canvas -->
+  <g opacity="0.85">
+    <use href="#petal" x="220"  y="380" transform="rotate(20 220 380)"/>
+    <use href="#petal" x="380"  y="240" transform="rotate(-25 380 240) scale(0.85)"/>
+    <use href="#petal" x="540"  y="520" transform="rotate(45 540 520) scale(1.1)"/>
+    <use href="#petal" x="710"  y="320" transform="rotate(-10 710 320) scale(0.7)"/>
+    <use href="#petal" x="870"  y="600" transform="rotate(60 870 600) scale(1.2)"/>
+    <use href="#petal" x="1030" y="280" transform="rotate(-40 1030 280) scale(0.9)"/>
+    <use href="#petal" x="1180" y="540" transform="rotate(15 1180 540) scale(1.0)"/>
+    <use href="#petal" x="1330" y="400" transform="rotate(-55 1330 400) scale(0.8)"/>
+    <use href="#petal" x="1480" y="640" transform="rotate(35 1480 640) scale(1.15)"/>
+    <use href="#petal" x="1660" y="380" transform="rotate(-15 1660 380) scale(0.75)"/>
+    <use href="#petal" x="1820" y="560" transform="rotate(50 1820 560) scale(0.95)"/>
+    <use href="#petal" x="140"  y="640" transform="rotate(-30 140 640) scale(1.05)"/>
+    <use href="#petal" x="320"  y="480" transform="rotate(25 320 480) scale(0.8)"/>
+    <use href="#petal" x="60"   y="280" transform="rotate(70 60 280) scale(0.65)"/>
+    <use href="#petal" x="950"  y="440" transform="rotate(-50 950 440) scale(0.7)"/>
+    <use href="#petal" x="1750" y="280" transform="rotate(20 1750 280) scale(0.6)"/>
+    <use href="#petal" x="660"  y="700" transform="rotate(-20 660 700) scale(1.0)"/>
+    <use href="#petal" x="1280" y="720" transform="rotate(40 1280 720) scale(0.85)"/>
+    <use href="#petal" x="100"  y="780" transform="rotate(-65 100 780) scale(0.75)"/>
+    <use href="#petal" x="1900" y="820" transform="rotate(30 1900 820) scale(0.9)"/>
+  </g>
+</svg>
