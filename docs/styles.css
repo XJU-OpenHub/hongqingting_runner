@@ -466,3 +466,14 @@ textarea.config-input {
   margin-top: 12px;
   white-space: pre-wrap;
 }
+
+.split-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.split-2col > .card { margin: 0; }
+@media (max-width: 880px) {
+  .split-2col { grid-template-columns: 1fr; }
+}

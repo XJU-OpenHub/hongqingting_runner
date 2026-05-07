@@ -35,76 +35,19 @@
       </div>
     </div>
 
-    <!-- ===== Tabs ===== -->
-    <div class="tabs" id="tabs" role="tablist">
-      <button class="tab-btn active" data-tab="auth">登录鉴权</button>
-      <button class="tab-btn" data-tab="summary">查询里程</button>
-      <button class="tab-btn" data-tab="upload">上传跑步数据</button>
-      <button class="tab-btn" data-tab="batch">批量上传</button>
-      <button class="tab-btn" data-tab="about">关于教学</button>
-    </div>
+    <div class="split-2col">
 
-    <!-- 登录 -->
-    <section class="tab-panel active" id="panel-auth">
       <div class="card">
-        <h3>登录鉴权（form-urlencoded + MD5）</h3>
-        <p class="status-line">默认密码 = <code>passwordPrefix</code> + 学号，再做 MD5。代理把组装好的 <code>name=[...]</code> form 体 POST 到 <code>authUrl</code>。</p>
-        <div class="field-grid">
-          <div class="field"><label>学号</label><input id="auth-no" type="text" placeholder="20221303205" /></div>
-        </div>
-        <button class="btn" id="btn-auth">登录</button>
-        <div class="result-panel" id="result-auth"></div>
-      </div>
-    </section>
-
-    <!-- 查里程 -->
-    <section class="tab-panel" id="panel-summary">
-      <div class="card">
-        <h3>查询跑步里程（gzip JSON）</h3>
-        <p class="status-line">代理把 <code>{'studentno':...,'uid':...,'schoolno':...}</code> gzip 后 POST 到 <code>summaryUrl</code>，返回累计里程和上次跑步时间。</p>
+        <h3>查询跑步里程</h3>
         <div class="field-grid">
           <div class="field"><label>学号</label><input id="sum-no" type="text" placeholder="20221303205" /></div>
         </div>
         <button class="btn" id="btn-summary">查询</button>
         <div class="result-panel" id="result-summary"></div>
       </div>
-    </section>
 
-    <!-- 上传 -->
-    <section class="tab-panel" id="panel-upload">
       <div class="card">
-        <h3>上传跑步数据（gzip JSON + 轨迹时间戳重写）</h3>
-        <p class="status-line">代理读取轨迹文件，把每帧时间戳替换成 <code>[begintime, begintime+usetime]</code> 区间内的均匀时间，再 gzip 后 POST 到 <code>uploadUrl</code>。</p>
-        <div class="field-grid">
-          <div class="field"><label>学号</label><input id="up-no" type="text" placeholder="20221303205" /></div>
-          <div class="field">
-            <label>轨迹</label>
-            <select id="up-track">
-              <option value="location_1km">location_1km · 1.0 km</option>
-              <option value="location_1_16km">location_1_16km · 1.16 km</option>
-              <option value="location_1_6km" selected>location_1_6km · 1.6 km</option>
-              <option value="location_12km">location_12km · 12 km</option>
-            </select>
-          </div>
-          <div class="field"><label>距离 米</label><input id="up-distance" type="number" step="any" value="1600" /></div>
-          <div class="field"><label>用时基线 秒</label><input id="up-usetime" type="number" value="320" /></div>
-          <div class="field"><label>用时抖动 秒</label><input id="up-jitter" type="number" value="100" /></div>
-          <div class="field"><label>距今天数 (dayOffset)</label><input id="up-day" type="number" step="0.1" value="1.0" /></div>
-          <div class="field">
-            <label>UID 序号</label>
-            <select id="up-uid"></select>
-          </div>
-        </div>
-        <button class="btn" id="btn-upload">发包</button>
-        <div class="result-panel" id="result-upload"></div>
-      </div>
-    </section>
-
-    <!-- 批量 -->
-    <section class="tab-panel" id="panel-batch">
-      <div class="card">
-        <h3>批量上传（循环 N 天）</h3>
-        <p class="status-line">按"距今 N 天前"循环上传同一条轨迹。两次请求间会随机停顿，避免被同一时刻多笔上传识别。</p>
+        <h3>批量上传跑步数据</h3>
         <div class="field-grid">
           <div class="field"><label>学号</label><input id="b-no" type="text" placeholder="20221303205" /></div>
           <div class="field">
@@ -130,38 +73,8 @@
         <button class="btn secondary" id="btn-batch-stop" disabled>停止</button>
         <div class="batch-log" id="batch-log"></div>
       </div>
-    </section>
 
-    <!-- 教学 -->
-    <section class="tab-panel" id="panel-about">
-      <div class="card">
-        <h3>这页是怎么"绕开"浏览器的</h3>
-        <p>浏览器有两道墙挡着前端直接调 HTTP 接口：</p>
-        <ul>
-          <li><strong>Mixed Content</strong>：HTTPS 页面调 HTTP 资源 → 直接拦截。GitHub Pages 只能 HTTPS。</li>
-          <li><strong>CORS</strong>：跨源请求需要服务端返回 <code>Access-Control-Allow-Origin</code>。教学 mock 不会下发这个头。</li>
-        </ul>
-        <p>这页的破解办法 = <strong>把 Python 的活搬到一台同时面向你授权 mock 和面向公网 HTTPS 的代理服务器上</strong>：</p>
-        <pre><code>浏览器 (HTTPS) → cloudflared HTTPS 隧道 → FastAPI 代理 (HTTP, 内网)
-              → 你授权的教学 mock (HTTP)</code></pre>
-        <p>代理负责浏览器做不了的活：</p>
-        <ul>
-          <li>修改 <code>User-Agent</code> 模拟 Dalvik/okhttp 客户端</li>
-          <li>把请求体 gzip 压缩</li>
-          <li>对密码做 MD5（其实 SubtleCrypto 也能做）</li>
-          <li>按运动时长重写每一帧的 GPS 时间戳</li>
-          <li>透传响应给前端 + 同时把"组装出来的明文 body"发给前端展示，方便你给学生讲</li>
-        </ul>
-        <h4>反作弊视角看哪些位置可以识别</h4>
-        <ul>
-          <li>每帧时间戳间距 = <code>usetime / framecount</code> → 均匀到不真实，扎堆 30Hz / 25Hz 的整数倍</li>
-          <li>轨迹本身是固定的几条预录的"宿舍 → 一教"路径，UID 不同但轨迹完全相同</li>
-          <li>UID 来自一个固定列表，会出现"5 个学生的设备指纹一样"的模式</li>
-          <li>速度分布（min/km）跟人体生理上限对比，校园场景 12km/40min 偏快</li>
-          <li>同一 IP 短时间内出现多个学号上传 → 代理本身就是个识别点</li>
-        </ul>
-      </div>
-    </section>
+    </div>
 
   </div>
 
@@ -197,27 +110,22 @@
     if (!CFG) {
       status.textContent = "尚未导入配置。粘贴你的 JSON 或选择文件。";
       status.classList.remove("loaded");
-      // empty uid selects
-      for (const id of ["up-uid", "b-uid"]) {
-        const sel = document.getElementById(id);
-        sel.innerHTML = '<option value="">--</option>';
-      }
+      const sel = document.getElementById("b-uid");
+      sel.innerHTML = '<option value="">--</option>';
       return;
     }
     const arr = uidArray(CFG);
     status.classList.add("loaded");
     status.textContent =
       `已加载: proxy=${CFG.proxyUrl} | schoolNo=${CFG.schoolNo} | uid 数=${arr.length}`;
-    for (const id of ["up-uid", "b-uid"]) {
-      const sel = document.getElementById(id);
-      sel.innerHTML = "";
-      arr.forEach((u, i) => {
-        const opt = document.createElement("option");
-        opt.value = String(i);
-        opt.textContent = `[${i}] ${u.slice(0, 24)}…`;
-        sel.appendChild(opt);
-      });
-    }
+    const sel = document.getElementById("b-uid");
+    sel.innerHTML = "";
+    arr.forEach((u, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = `[${i}] ${u.slice(0, 24)}…`;
+      sel.appendChild(opt);
+    });
   }
 
   // ============ HTTP helpers ===============================================
@@ -321,35 +229,6 @@
     refreshConfigUI();
   };
 
-  // ============ Wire up: tabs ==============================================
-  for (const btn of document.querySelectorAll(".tab-btn")) {
-    btn.onclick = () => {
-      for (const b of document.querySelectorAll(".tab-btn")) b.classList.remove("active");
-      btn.classList.add("active");
-      const tab = btn.dataset.tab;
-      for (const p of document.querySelectorAll(".tab-panel")) p.classList.remove("active");
-      document.getElementById("panel-" + tab).classList.add("active");
-    };
-  }
-
-  // ============ Wire up: auth ==============================================
-  document.getElementById("btn-auth").onclick = async () => {
-    const no = document.getElementById("auth-no").value.trim();
-    if (!no) return alert("请输入学号");
-    if (!CFG) return alert("请先导入配置");
-    try {
-      const data = await callProxy("/proxy/auth", {
-        authUrl: CFG.authUrl,
-        schoolNo: CFG.schoolNo,
-        passwordPrefix: CFG.passwordPrefix,
-        studentNo: no,
-      });
-      renderResult("result-auth", data, "OK", "ok");
-    } catch (e) {
-      renderResult("result-auth", e.detail || {error: e.message}, "ERR", "err");
-    }
-  };
-
   // ============ Wire up: summary ===========================================
   document.getElementById("btn-summary").onclick = async () => {
     const no = document.getElementById("sum-no").value.trim();
@@ -385,26 +264,6 @@
       useTimeJitter: Number(useTimeJitter),
     });
   }
-
-  document.getElementById("btn-upload").onclick = async () => {
-    if (!CFG) return alert("请先导入配置");
-    const no = document.getElementById("up-no").value.trim();
-    if (!no) return alert("请输入学号");
-    try {
-      const data = await doUpload({
-        no,
-        track:        document.getElementById("up-track").value,
-        distance:     document.getElementById("up-distance").value,
-        baseUseTime:  document.getElementById("up-usetime").value,
-        useTimeJitter:document.getElementById("up-jitter").value,
-        day:          document.getElementById("up-day").value,
-        uidIdx: parseInt(document.getElementById("up-uid").value, 10),
-      });
-      renderResult("result-upload", data, "OK", "ok");
-    } catch (e) {
-      renderResult("result-upload", e.detail || {error: e.message}, "ERR", "err");
-    }
-  };
 
   // ============ Wire up: batch =============================================
   let batchAbort = false;
