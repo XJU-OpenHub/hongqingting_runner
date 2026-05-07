@@ -59,15 +59,7 @@
               <option value="location_12km">location_12km · 12 km</option>
             </select>
           </div>
-          <div class="field"><label>距离 米</label><input id="b-distance" type="number" step="any" value="1600" /></div>
-          <div class="field"><label>用时基线 秒</label><input id="b-usetime" type="number" value="320" /></div>
-          <div class="field"><label>起始 dayOffset</label><input id="b-start-day" type="number" step="0.1" value="0" /></div>
-          <div class="field"><label>共多少次</label><input id="b-count" type="number" value="5" /></div>
-          <div class="field"><label>每次间隔 秒</label><input id="b-delay" type="number" value="2" /></div>
-          <div class="field">
-            <label>UID 序号</label>
-            <select id="b-uid"></select>
-          </div>
+          <div class="field"><label>往前推多少天</label><input id="b-days" type="number" value="30" /></div>
         </div>
         <button class="btn" id="btn-batch-start">开始</button>
         <button class="btn secondary" id="btn-batch-stop" disabled>停止</button>
@@ -116,22 +108,11 @@
     if (!CFG) {
       status.textContent = "尚未导入配置。粘贴你的 JSON 或选择文件。";
       status.classList.remove("loaded");
-      const sel = document.getElementById("b-uid");
-      sel.innerHTML = '<option value="">--</option>';
       return;
     }
-    const arr = uidArray(CFG);
     status.classList.add("loaded");
     status.textContent =
-      `已加载: proxy=${CFG.proxyUrl} | schoolNo=${CFG.schoolNo} | uid 数=${arr.length}`;
-    const sel = document.getElementById("b-uid");
-    sel.innerHTML = "";
-    arr.forEach((u, i) => {
-      const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = `[${i}] ${u.slice(0, 24)}…`;
-      sel.appendChild(opt);
-    });
+      `已加载: proxy=${CFG.proxyUrl} | schoolNo=${CFG.schoolNo} | uid 数=${uidArray(CFG).length}`;
   }
 
   // ============ HTTP helpers ===============================================
@@ -240,7 +221,6 @@
     const el = document.getElementById("result-summary");
     el.innerHTML = "";
 
-    // Pull km out of m, e.g. "\r\napp跑步:108.831公里"
     const m = (data.parsed && data.parsed.m) || "";
     const km = (m.match(/(-?\d+(\.\d+)?)\s*公里/) || [])[1];
 
@@ -249,6 +229,11 @@
       head.className = "headline";
       head.innerHTML = `<span class="num">${km}</span><span class="unit">公里</span>`;
       el.appendChild(head);
+    } else {
+      const sub = document.createElement("div");
+      sub.className = "headline-sub";
+      sub.textContent = "未解析到里程数据";
+      el.appendChild(sub);
     }
     if (data.parsed && data.parsed.lasttimeFormatted) {
       const sub = document.createElement("div");
@@ -256,14 +241,6 @@
       sub.textContent = `上次跑步：${data.parsed.lasttimeFormatted}`;
       el.appendChild(sub);
     }
-
-    const d = document.createElement("details");
-    d.className = "debug-section";
-    d.innerHTML = `<summary>原始返回</summary><pre></pre>`;
-    d.querySelector("pre").textContent = JSON.stringify(
-      {upstreamStatus: data.upstreamStatus, parsed: data.parsed,
-       upstreamBody: data.upstreamBody, debug: data.debug}, null, 2);
-    el.appendChild(d);
   }
 
   document.getElementById("btn-summary").onclick = async () => {
@@ -302,6 +279,16 @@
   }
 
   // ============ Wire up: batch =============================================
+  // Per-track defaults that mirror hongqingting.py's PostRunData_*km() functions.
+  const TRACK_DEFAULTS = {
+    location_1km:    {distance: 1000,  baseUseTime: 320,  useTimeJitter: 100},
+    location_1_16km: {distance: 1160,  baseUseTime: 320,  useTimeJitter: 900},
+    location_1_6km:  {distance: 1600,  baseUseTime: 320,  useTimeJitter: 100},
+    location_12km:   {distance: 12000, baseUseTime: 5800, useTimeJitter: 600},
+  };
+  const BATCH_DELAY_SEC = 2;
+  const BATCH_UID_IDX   = 0;
+
   let batchAbort = false;
   function logBatch(line) {
     const el = document.getElementById("batch-log");
@@ -312,15 +299,12 @@
 
   document.getElementById("btn-batch-start").onclick = async () => {
     if (!CFG) return alert("请先导入配置");
-    const no = document.getElementById("b-no").value.trim();
+    const no    = document.getElementById("b-no").value.trim();
     if (!no) return alert("请输入学号");
-    const track    = document.getElementById("b-track").value;
-    const distance = document.getElementById("b-distance").value;
-    const baseUseTime = document.getElementById("b-usetime").value;
-    const startDay = parseFloat(document.getElementById("b-start-day").value);
-    const count    = parseInt(document.getElementById("b-count").value, 10);
-    const delaySec = parseFloat(document.getElementById("b-delay").value);
-    const uidIdx   = parseInt(document.getElementById("b-uid").value, 10);
+    const track = document.getElementById("b-track").value;
+    const count = parseInt(document.getElementById("b-days").value, 10);
+    if (!Number.isFinite(count) || count < 1) return alert("「往前推多少天」必须是 ≥1 的整数");
+    const def   = TRACK_DEFAULTS[track];
 
     document.getElementById("btn-batch-start").disabled = true;
     document.getElementById("btn-batch-stop").disabled = false;
@@ -328,23 +312,23 @@
     batchAbort = false;
 
     for (let i = 0; i < count && !batchAbort; i++) {
-      const day = startDay + i;
-      logBatch(`[${i + 1}/${count}] dayOffset=${day} 开始…`);
+      const day = i + 1;  // 1 day ago, 2 days ago, ...
+      logBatch(`[${i + 1}/${count}] ${day} 天前 …`);
       try {
         const data = await doUpload({
-          no, track, distance, baseUseTime,
-          useTimeJitter: 600, day, uidIdx,
+          no, track,
+          distance:      def.distance,
+          baseUseTime:   def.baseUseTime,
+          useTimeJitter: def.useTimeJitter,
+          day,
+          uidIdx:        BATCH_UID_IDX,
         });
         const dbg = data.debug || {};
-        logBatch(`  ✓ status=${data.upstreamStatus}  ${dbg.begintimeFormatted} → ${dbg.endtimeFormatted}  ${dbg.distanceMeters}m / ${dbg.usetimeSeconds}s`);
-        logBatch(`  ↳ upstream: ${(data.upstreamBody || "").slice(0, 200)}`);
+        logBatch(`  ✓ ${dbg.begintimeFormatted} → ${dbg.endtimeFormatted}  ${dbg.distanceMeters}m / ${dbg.usetimeSeconds}s`);
       } catch (e) {
-        logBatch(`  ✗ ${e.message} ${e.detail ? JSON.stringify(e.detail).slice(0,200) : ""}`);
+        logBatch(`  ✗ ${e.message}`);
       }
-      if (i < count - 1 && !batchAbort) {
-        logBatch(`  · 等待 ${delaySec}s`);
-        await sleep(delaySec * 1000);
-      }
+      if (i < count - 1 && !batchAbort) await sleep(BATCH_DELAY_SEC * 1000);
     }
     logBatch(batchAbort ? "已停止" : "完成");
     document.getElementById("btn-batch-start").disabled = false;
