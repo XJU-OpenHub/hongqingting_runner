@@ -99,6 +99,12 @@
                       "schoolNo", "passwordPrefix", "queryUid", "uidList"];
     for (const k of required) if (!(k in cfg)) throw new Error("缺少字段: " + k);
     if (typeof cfg.uidList !== "string") throw new Error("uidList 应为换行分隔的字符串");
+    for (const k of ["proxyUrl", "authUrl", "summaryUrl", "uploadUrl"]) {
+      const v = String(cfg[k] || "").trim();
+      if (!/^https?:\/\//i.test(v)) {
+        throw new Error(`${k} 必须以 http:// 或 https:// 开头，当前: "${v}"`);
+      }
+    }
     return true;
   }
   function uidArray(cfg) {
