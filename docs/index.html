@@ -60,6 +60,7 @@
             </select>
           </div>
           <div class="field"><label>往前推多少天</label><input id="b-days" type="number" value="30" /></div>
+          <div class="field"><label>每天偏移 (i - 此值)</label><input id="b-offset" type="number" step="0.1" value="0.3" /></div>
         </div>
         <button class="btn" id="btn-batch-start">开始</button>
         <button class="btn secondary" id="btn-batch-stop" disabled>停止</button>
@@ -302,9 +303,11 @@
     const no    = document.getElementById("b-no").value.trim();
     if (!no) return alert("请输入学号");
     const track = document.getElementById("b-track").value;
-    const count = parseInt(document.getElementById("b-days").value, 10);
+    const count  = parseInt(document.getElementById("b-days").value, 10);
     if (!Number.isFinite(count) || count < 1) return alert("「往前推多少天」必须是 ≥1 的整数");
-    const def   = TRACK_DEFAULTS[track];
+    const offset = parseFloat(document.getElementById("b-offset").value);
+    if (!Number.isFinite(offset)) return alert("「每天偏移」必须是数字");
+    const def    = TRACK_DEFAULTS[track];
 
     document.getElementById("btn-batch-start").disabled = true;
     document.getElementById("btn-batch-stop").disabled = false;
@@ -312,8 +315,8 @@
     batchAbort = false;
 
     for (let i = 0; i < count && !batchAbort; i++) {
-      const day = i + 1;  // 1 day ago, 2 days ago, ...
-      logBatch(`[${i + 1}/${count}] ${day} 天前 …`);
+      const day = i - offset;  // mirrors hongqingting.py: PostRunData_*(no, i-0.3, uid)
+      logBatch(`[${i + 1}/${count}] day=${day.toFixed(2)} …`);
       try {
         const data = await doUpload({
           no, track,
