@@ -3,24 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>hongqingting_runner · 教学演示</title>
+  <title>hongqingting</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="page-header">
-    <h1>hongqingting_runner</h1>
-    <p class="subtitle">网络安全教学演示 · 客户端伪造数据上报 · 浏览器 → 教学代理 → 授权 mock 服务器</p>
+    <h1>hongqingting</h1>
   </header>
 
   <div class="runner-layout">
-
-    <div class="callout callout-warn">
-      <strong>使用须知：</strong>
-      本页演示如何把"原本只能在 Python <code>requests</code> 里跑的伪造请求"通过教学代理在浏览器中复现，目的是讲解
-      Mixed Content / CORS / gzip / MD5 鉴权 / 轨迹时间戳篡改。
-      请只把 <code>authUrl / summaryUrl / uploadUrl</code> 指向你自己授权、自己控制的教学 mock。
-      指向真实生产系统提交伪造数据违反学术诚信和大多数地方法律法规，本课程材料明确不为此提供帮助。
-    </div>
 
     <!-- ===== Config ===== -->
     <div class="card" id="card-config">
